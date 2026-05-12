@@ -125,17 +125,13 @@ export function UserProvider({ children }) {
     // Safety net — never stay on loading screen more than 5s
     const safetyTimer = setTimeout(() => { if (mounted) setLoading(false) }, 5000)
 
-    // If this is a password recovery link, skip getSession — let onAuthStateChange handle it
-    const isRecoveryUrl = window.location.hash.includes('type=recovery')
-                       || window.location.search.includes('type=recovery')
-
-    // Fast path: read session — bail out after 4s if Supabase is cold/paused
-    const timeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
-    Promise.race([supabase.auth.getSession(), timeout]).then(async ({ data: { session } }) => {
-      if (!mounted || isRecoveryUrl) return
+    // Fast initial session check — 4s timeout in case Supabase is slow
+    const sessionTimeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
+    Promise.race([supabase.auth.getSession(), sessionTimeout]).then(async ({ data: { session } }) => {
+      if (!mounted) return
       const u = session?.user || null
       setAuthUser(u)
-      setIsPasswordRecovery(false)
+      // Do NOT touch isPasswordRecovery here — onAuthStateChange owns that flag
       if (u) await loadUserData(u.id)
       else {
         setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
@@ -143,20 +139,10 @@ export function UserProvider({ children }) {
       }
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
-
-        // For recovery URLs, INITIAL_SESSION carries the recovery session — treat it as recovery
-        if (event === 'INITIAL_SESSION' && isRecoveryUrl && session?.user) {
-          setAuthUser(session.user)
-          setIsPasswordRecovery(true)
-          await loadUserData(session.user.id)
-          return
-        }
-        // For normal URLs, INITIAL_SESSION is already handled by getSession()
-        if (event === 'INITIAL_SESSION') return
+        if (event === 'INITIAL_SESSION') return // handled by getSession() above
 
         if (event === 'PASSWORD_RECOVERY') {
           const u = session?.user || null
@@ -166,6 +152,7 @@ export function UserProvider({ children }) {
           else setLoading(false)
           return
         }
+
         const u = session?.user || null
         setAuthUser(u)
         setIsPasswordRecovery(false)
