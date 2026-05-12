@@ -1,8 +1,26 @@
+@import "tailwindcss";
 @import '@fontsource/orbitron';
 @import '@fontsource/rajdhani';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+@theme {
+  --color-arcade-bg:     #080818;
+  --color-arcade-card:   #0d0d2b;
+  --color-arcade-cyan:   #00f5ff;
+  --color-arcade-purple: #bf00ff;
+  --color-arcade-pink:   #ff006e;
+  --color-arcade-green:  #00ff88;
+  --color-arcade-gold:   #ffd700;
+  --color-arcade-border: #1a1a3e;
+
+  --font-orbitron: 'Orbitron', sans-serif;
+  --font-rajdhani: 'Rajdhani', sans-serif;
+
+  --shadow-neon-cyan:   0 0 20px #00f5ff, 0 0 40px #00f5ff33;
+  --shadow-neon-purple: 0 0 20px #bf00ff, 0 0 40px #bf00ff33;
+  --shadow-neon-pink:   0 0 20px #ff006e, 0 0 40px #ff006e33;
+  --shadow-neon-green:  0 0 20px #00ff88, 0 0 40px #00ff8833;
+  --shadow-neon-gold:   0 0 20px #ffd700, 0 0 40px #ffd70033;
+}
 
 body {
   background-color: #080818;
@@ -16,11 +34,11 @@ body {
 ::-webkit-scrollbar-track { background: #080818; }
 ::-webkit-scrollbar-thumb { background: #00f5ff; border-radius: 2px; }
 
-.neon-text-cyan  { color: #00f5ff; text-shadow: 0 0 10px #00f5ff, 0 0 30px #00f5ff; }
-.neon-text-purple{ color: #bf00ff; text-shadow: 0 0 10px #bf00ff, 0 0 30px #bf00ff; }
-.neon-text-pink  { color: #ff006e; text-shadow: 0 0 10px #ff006e, 0 0 30px #ff006e; }
-.neon-text-green { color: #00ff88; text-shadow: 0 0 10px #00ff88, 0 0 30px #00ff88; }
-.neon-text-gold  { color: #ffd700; text-shadow: 0 0 10px #ffd700, 0 0 30px #ffd700; }
+.neon-text-cyan   { color: #00f5ff; text-shadow: 0 0 10px #00f5ff, 0 0 30px #00f5ff; }
+.neon-text-purple { color: #bf00ff; text-shadow: 0 0 10px #bf00ff, 0 0 30px #bf00ff; }
+.neon-text-pink   { color: #ff006e; text-shadow: 0 0 10px #ff006e, 0 0 30px #ff006e; }
+.neon-text-green  { color: #00ff88; text-shadow: 0 0 10px #00ff88, 0 0 30px #00ff88; }
+.neon-text-gold   { color: #ffd700; text-shadow: 0 0 10px #ffd700, 0 0 30px #ffd700; }
 
 .glass-card {
   background: rgba(13, 13, 43, 0.85);
@@ -54,3 +72,23 @@ body {
   pointer-events: none;
   z-index: 9999;
 }
+
+/* Background orbs */
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -30px) scale(1.05); }
+  66%       { transform: translate(-20px, 20px) scale(0.95); }
+}
+.orb {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: orbFloat 12s ease-in-out infinite;
+  pointer-events: none;
+}
+.orb-cyan   { background: radial-gradient(circle, rgba(0,245,255,0.35), transparent 70%); animation-delay: 0s; }
+.orb-purple { background: radial-gradient(circle, rgba(191,0,255,0.3), transparent 70%); animation-delay: -4s; }
+.orb-pink   { background: radial-gradient(circle, rgba(255,0,110,0.25), transparent 70%); animation-delay: -8s; }
+.orb-green  { background: radial-gradient(circle, rgba(0,255,136,0.2), transparent 70%); animation-delay: -2s; }

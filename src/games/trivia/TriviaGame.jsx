@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../context/UserContext'
@@ -39,16 +39,16 @@ export default function TriviaGame() {
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState(null)
   const [score, setScore] = useState(0)
-  const [scoreRef, setScoreRef] = useState(0)
   const [timeLeft, setTimeLeft] = useState(TIMER)
   const [answers, setAnswers] = useState([])
+  const scoreAccum = useRef(0)
   const { updateScore } = useUser()
   const navigate = useNavigate()
 
   const loadGame = useCallback(async () => {
     setPhase('loading')
     setScore(0)
-    setScoreRef(0)
+    scoreAccum.current = 0
     setCurrent(0)
     setSelected(null)
     setAnswers([])
@@ -79,36 +79,46 @@ export default function TriviaGame() {
 
   useEffect(() => { loadGame() }, [loadGame])
 
+  const handleAnswer = useCallback((option) => {
+    setSelected(prev => {
+      if (prev !== null) return prev
+      return option
+    })
+
+    setQuestions(qs => {
+      const q = qs[current]
+      if (!q) return qs
+      const isCorrect = option === q.correct
+      const pts = isCorrect ? (POINTS[q.difficulty] || 10) + Math.floor(timeLeft * 1.5) : 0
+      scoreAccum.current += pts
+      setScore(scoreAccum.current)
+      setAnswers(a => [...a, isCorrect])
+
+      setTimeout(() => {
+        setCurrent(c => {
+          const next = c + 1
+          if (next >= qs.length) {
+            updateScore('trivia', scoreAccum.current)
+            setPhase('result')
+          } else {
+            setSelected(null)
+            setTimeLeft(TIMER)
+          }
+          return next < qs.length ? next : c
+        })
+      }, 1200)
+
+      return qs
+    })
+  }, [current, timeLeft, updateScore])
+
   // Timer
   useEffect(() => {
     if (phase !== 'playing' || selected !== null) return
     if (timeLeft === 0) { handleAnswer(null); return }
     const t = setTimeout(() => setTimeLeft(t => t - 1), 1000)
     return () => clearTimeout(t)
-  }, [phase, timeLeft, selected])
-
-  const handleAnswer = (option) => {
-    if (selected !== null) return
-    setSelected(option)
-    const q = questions[current]
-    const isCorrect = option === q.correct
-    const pts = isCorrect ? (POINTS[q.difficulty] || 10) + Math.floor(timeLeft * 1.5) : 0
-    const newScore = scoreRef + pts
-    setScore(newScore)
-    setScoreRef(newScore)
-    setAnswers(a => [...a, isCorrect])
-
-    setTimeout(() => {
-      if (current + 1 >= questions.length) {
-        updateScore('trivia', newScore)
-        setPhase('result')
-      } else {
-        setCurrent(c => c + 1)
-        setSelected(null)
-        setTimeLeft(TIMER)
-      }
-    }, 1200)
-  }
+  }, [phase, timeLeft, selected, handleAnswer])
 
   if (phase === 'loading') return <Loader />
   if (phase === 'error') return <ErrorScreen onRetry={loadGame} onHub={() => navigate('/hub')} />
@@ -131,6 +141,8 @@ export default function TriviaGame() {
   }
 
   const q = questions[current]
+  if (!q) return <Loader />
+
   const timerPct = (timeLeft / TIMER) * 100
   const timerColor = timeLeft > 8 ? 'bg-arcade-green' : timeLeft > 4 ? 'bg-arcade-gold' : 'bg-arcade-pink'
   const timerText = timeLeft > 8 ? 'neon-text-green' : timeLeft > 4 ? 'neon-text-gold' : 'neon-text-pink'
@@ -155,16 +167,14 @@ export default function TriviaGame() {
         />
       </div>
 
-      {/* Meta row */}
+      {/* Meta + Timer row */}
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-rajdhani px-2 py-0.5 rounded uppercase tracking-wider
-            ${q.difficulty === 'easy' ? 'text-arcade-green bg-arcade-green/10' :
-              q.difficulty === 'medium' ? 'text-arcade-gold bg-arcade-gold/10' :
-              'text-arcade-pink bg-arcade-pink/10'}`}>
-            {q.difficulty}
-          </span>
-        </div>
+        <span className={`text-[10px] font-rajdhani px-2 py-0.5 rounded uppercase tracking-wider
+          ${q.difficulty === 'easy'   ? 'text-arcade-green bg-arcade-green/10' :
+            q.difficulty === 'medium' ? 'text-arcade-gold  bg-arcade-gold/10'  :
+                                        'text-arcade-pink  bg-arcade-pink/10'}`}>
+          {q.difficulty}
+        </span>
         <div className="flex items-center gap-2">
           <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
             <motion.div
@@ -200,9 +210,9 @@ export default function TriviaGame() {
             {q.options.map((opt, i) => {
               let cls = 'border border-gray-700 text-gray-300 hover:border-gray-500'
               if (selected !== null) {
-                if (opt === q.correct) cls = 'neon-border-green text-arcade-green bg-arcade-green/10'
-                else if (opt === selected) cls = 'neon-border-pink text-arcade-pink bg-arcade-pink/10'
-                else cls = 'border border-gray-800 text-gray-700'
+                if (opt === q.correct)               cls = 'neon-border-green text-arcade-green bg-arcade-green/10'
+                else if (opt === selected)           cls = 'neon-border-pink  text-arcade-pink  bg-arcade-pink/10'
+                else                                 cls = 'border border-gray-800 text-gray-700'
               }
               return (
                 <motion.button
@@ -210,12 +220,9 @@ export default function TriviaGame() {
                   whileTap={{ scale: selected ? 1 : 0.97 }}
                   onClick={() => handleAnswer(opt)}
                   disabled={selected !== null}
-                  className={`glass-card rounded-xl px-4 py-3 font-rajdhani text-sm text-left
-                             transition-all duration-300 ${cls}`}
+                  className={`glass-card rounded-xl px-4 py-3 font-rajdhani text-sm text-left transition-all duration-300 ${cls}`}
                 >
-                  <span className="font-orbitron text-xs text-gray-600 mr-3">
-                    {['A', 'B', 'C', 'D'][i]}
-                  </span>
+                  <span className="font-orbitron text-xs text-gray-600 mr-3">{['A','B','C','D'][i]}</span>
                   {opt}
                 </motion.button>
               )

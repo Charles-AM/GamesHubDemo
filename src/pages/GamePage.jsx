@@ -1,15 +1,15 @@
 import { useParams, Navigate } from 'react-router-dom'
 import TriviaGame from '../games/trivia/TriviaGame'
+import WordleGame from '../games/wordle/WordleGame'
 
 const GAMES = {
   trivia: TriviaGame,
+  wordle: WordleGame,
 }
 
 export default function GamePage() {
   const { gameId, mode } = useParams()
   const GameComponent = GAMES[gameId]
-
   if (!GameComponent) return <Navigate to="/hub" />
-
   return <GameComponent mode={mode} />
 }
