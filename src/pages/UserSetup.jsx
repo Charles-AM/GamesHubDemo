@@ -5,7 +5,7 @@ import { useUser, AVATARS } from '../context/UserContext'
 const FLOATERS = ['🎮','🕹️','⚡','🏆','🎯','🌟','🔥','💥','🎲','👾']
 
 export default function UserSetup() {
-  const { signIn, signUp, createProfile, needsProfile,
+  const { signIn, signUp, signOut, createProfile, needsProfile,
           sendPasswordReset, updatePassword, isPasswordRecovery } = useUser()
 
   const [screen,   setScreen]   = useState(
@@ -302,6 +302,11 @@ export default function UserSetup() {
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff', boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
               {loading ? 'SAVING...' : '⚡ ENTER THE ARENA'}
             </motion.button>
+
+            <button onClick={() => signOut()}
+              className="w-full mt-3 py-2 font-orbitron text-[10px] text-gray-700 hover:text-gray-500 transition-colors">
+              ← SIGN OUT / USE DIFFERENT ACCOUNT
+            </button>
           </motion.div>
         )}
 
