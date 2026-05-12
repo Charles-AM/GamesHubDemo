@@ -120,14 +120,20 @@ export function UserProvider({ children }) {
 
   // ── Safety net: if Supabase never fires, stop loading after 6s ──
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 6000)
+    console.log('[Auth] UserProvider mounted')
+    const t = setTimeout(() => {
+      console.log('[Auth] 6s timeout fired — forcing loading=false')
+      setLoading(false)
+    }, 6000)
     return () => clearTimeout(t)
   }, [])
 
   // ── Auth state listener ─────────────────────────────────
   useEffect(() => {
+    console.log('[Auth] Registering onAuthStateChange listener')
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('[Auth] onAuthStateChange fired:', event, !!session?.user)
         if (event === 'PASSWORD_RECOVERY') {
           // User clicked the reset link — authenticated but needs to set new password
           const u = session?.user || null
