@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('[Supabase] URL defined:', !!url, '| Key defined:', !!key)
-
-if (!url || !key) {
-  console.error('[Supabase] Missing env vars — check Netlify environment variables')
+// Capture recovery flag NOW — before Supabase clears the hash during init
+export const isPasswordRecoveryLink = window.location.hash.includes('type=recovery')
+if (isPasswordRecoveryLink) {
+  sessionStorage.setItem('arcadia_recovery', '1')
 }
 
 export const supabase = createClient(

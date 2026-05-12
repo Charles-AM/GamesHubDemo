@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
+// Read recovery flag captured before Supabase cleared the hash
+const wasRecoveryLink = sessionStorage.getItem('arcadia_recovery') === '1'
+
 const Ctx = createContext()
 
 // ── XP & Levels ────────────────────────────────────────────
@@ -125,9 +128,7 @@ export function UserProvider({ children }) {
     // Safety net — never hang on loading screen
     const safetyTimer = setTimeout(() => { if (mounted) setLoading(false) }, 5000)
 
-    // Detect implicit-flow recovery link (#type=recovery in hash)
-    const isRecoveryLink = window.location.hash.includes('type=recovery')
-    console.log('[Auth] isRecoveryLink:', isRecoveryLink, '| hash:', window.location.hash.slice(0, 60))
+    const isRecoveryLink = wasRecoveryLink
 
     if (isRecoveryLink) {
       // Recovery link: let onAuthStateChange handle everything — don't call getSession
@@ -151,10 +152,8 @@ export function UserProvider({ children }) {
       async (event, session) => {
         if (!mounted) return
 
-        console.log('[Auth] onAuthStateChange:', event, '| user:', !!session?.user, '| isRecoveryLink:', isRecoveryLink)
-
-        // INITIAL_SESSION on a recovery link — treat it as PASSWORD_RECOVERY
-        if (event === 'INITIAL_SESSION' && isRecoveryLink) {
+        // INITIAL_SESSION or SIGNED_IN on a recovery link — show new-password screen
+        if (isRecoveryLink && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
           const u = session?.user || null
           setAuthUser(u)
           setIsPasswordRecovery(true)
@@ -221,6 +220,7 @@ export function UserProvider({ children }) {
   const updatePassword = useCallback(async (newPassword) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) throw error
+    sessionStorage.removeItem('arcadia_recovery')
     setIsPasswordRecovery(false)
   }, [])
 

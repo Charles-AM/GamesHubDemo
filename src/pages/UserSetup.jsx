@@ -9,7 +9,7 @@ export default function UserSetup() {
           sendPasswordReset, updatePassword, isPasswordRecovery } = useUser()
 
   const [screen,   setScreen]   = useState(
-    (isPasswordRecovery || window.location.hash.includes('type=recovery'))
+    (isPasswordRecovery || sessionStorage.getItem('arcadia_recovery') === '1')
       ? 'new-password'
       : needsProfile ? 'profile' : 'signin'
   )
