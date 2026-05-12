@@ -11,7 +11,7 @@ export default function UserSetup() {
   const [screen,   setScreen]   = useState(
     (isPasswordRecovery || sessionStorage.getItem('arcadia_recovery') === '1')
       ? 'new-password'
-      : needsProfile ? 'profile' : 'signin'
+      : needsProfile ? 'profile' : 'signup'
   )
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -119,8 +119,14 @@ export default function UserSetup() {
       await createProfile(name, avatar)
       // context will flip needsProfile → false and App routes to /hub
     } catch (e) {
-      if (e.message?.includes('unique')) setError('That username is taken — try another')
-      else setError(e.message || 'Could not save profile')
+      if (e.message?.includes('unique')) {
+        setError('That username is taken — try another')
+      } else if (e.message?.includes('foreign key') || e.message?.includes('violates') || e.message?.includes('not authenticated')) {
+        // Broken/stale session — sign out so they can start fresh
+        await signOut()
+      } else {
+        setError(e.message || 'Could not save profile')
+      }
     } finally {
       setLoading(false)
     }
@@ -203,7 +209,8 @@ export default function UserSetup() {
                 Forgot password?
               </button>
               <button onClick={() => { setScreen('signup'); setError('') }}
-                className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors py-2">
+                className="font-orbitron text-[10px] hover:text-gray-400 transition-colors py-2"
+                style={{ color: '#bf00ff' }}>
                 No account? CREATE →
               </button>
             </div>
@@ -304,7 +311,8 @@ export default function UserSetup() {
             </motion.button>
 
             <button onClick={() => signOut()}
-              className="w-full mt-3 py-2 font-orbitron text-[10px] text-gray-700 hover:text-gray-500 transition-colors">
+              className="w-full mt-3 py-2 rounded-xl font-orbitron text-[10px] tracking-widest transition-colors"
+              style={{ border: '1px solid rgba(255,0,110,0.4)', color: '#ff006e' }}>
               ← SIGN OUT / USE DIFFERENT ACCOUNT
             </button>
           </motion.div>
