@@ -1,10 +1,12 @@
 import { useParams, Navigate } from 'react-router-dom'
 import TriviaGame from '../games/trivia/TriviaGame'
 import WordleGame from '../games/wordle/WordleGame'
+import WordSearchGame from '../games/wordsearch/WordSearchGame'
 
 const GAMES = {
-  trivia: TriviaGame,
-  wordle: WordleGame,
+  trivia:     TriviaGame,
+  wordle:     WordleGame,
+  wordsearch: WordSearchGame,
 }
 
 export default function GamePage() {
