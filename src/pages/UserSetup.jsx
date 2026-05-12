@@ -44,9 +44,7 @@ export default function UserSetup() {
     setLoading(true)
     try {
       await signUp(email.trim(), password)
-      // Sign in immediately so the session is ready before profile setup
-      await signIn(email.trim(), password)
-      setScreen('profile')
+      setScreen('confirm-email') // wait for email confirmation
     } catch (e) {
       setError(e.message || 'Sign up failed')
     } finally {
@@ -275,6 +273,44 @@ export default function UserSetup() {
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff', boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
               {loading ? 'SAVING...' : '⚡ ENTER THE ARENA'}
             </motion.button>
+          </motion.div>
+        )}
+
+        {/* ── Confirm email (after sign up) ── */}
+        {screen === 'confirm-email' && (
+          <motion.div key="confirm-email" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="relative z-10 w-full max-w-sm text-center">
+
+            <motion.div animate={{ rotate: [0, -10, 10, -10, 0] }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-6xl mb-5">📨</motion.div>
+
+            <h2 className="font-orbitron text-lg font-black neon-text-cyan mb-2">CHECK YOUR INBOX</h2>
+            <p className="font-rajdhani text-sm text-gray-400 mb-2">
+              A confirmation link has been sent to
+            </p>
+            <p className="font-orbitron text-xs mb-4" style={{ color: '#00f5ff' }}>{email}</p>
+
+            <div className="glass-card rounded-2xl p-4 mb-6 text-left"
+              style={{ border: '1px solid rgba(0,245,255,0.15)' }}>
+              {[
+                '1. Open the email from Supabase',
+                '2. Click "Confirm your email"',
+                '3. You\'ll be brought back here',
+                '4. Pick your avatar & callsign',
+              ].map((step, i) => (
+                <p key={i} className="font-rajdhani text-xs text-gray-400 py-1">{step}</p>
+              ))}
+            </div>
+
+            <p className="font-rajdhani text-xs text-gray-600 mb-4">
+              Can't find it? Check your spam folder.
+            </p>
+
+            <button onClick={() => { setScreen('signup'); setError('') }}
+              className="w-full py-3 rounded-xl font-orbitron text-xs text-gray-500 border border-gray-800 hover:text-gray-300 transition-all">
+              ← USE A DIFFERENT EMAIL
+            </button>
           </motion.div>
         )}
 
