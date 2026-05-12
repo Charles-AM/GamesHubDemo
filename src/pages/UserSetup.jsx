@@ -5,19 +5,23 @@ import { useUser, AVATARS } from '../context/UserContext'
 const FLOATERS = ['🎮','🕹️','⚡','🏆','🎯','🌟','🔥','💥','🎲','👾']
 
 export default function UserSetup() {
-  const { signIn, signUp, createProfile, needsProfile } = useUser()
+  const { signIn, signUp, createProfile, needsProfile,
+          sendPasswordReset, updatePassword, isPasswordRecovery } = useUser()
 
-  // If authenticated but no profile yet → go straight to profile setup
-  const [screen, setScreen] = useState(needsProfile ? 'profile' : 'signin')
+  const [screen,   setScreen]   = useState(
+    isPasswordRecovery ? 'new-password' : needsProfile ? 'profile' : 'signin'
+  )
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
+  const [newPass,  setNewPass]  = useState('')
   const [username, setUsername] = useState('')
   const [avatar,   setAvatar]   = useState(AVATARS[0])
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
 
-  // Keep screen in sync if needsProfile changes from outside
-  if (needsProfile && screen !== 'profile') setScreen('profile')
+  // Keep screen in sync when context flags change
+  if (isPasswordRecovery && screen !== 'new-password') setScreen('new-password')
+  else if (!isPasswordRecovery && needsProfile && screen !== 'profile') setScreen('profile')
 
   const handleSignIn = async () => {
     setError('')
@@ -45,6 +49,34 @@ export default function UserSetup() {
       setScreen('profile')
     } catch (e) {
       setError(e.message || 'Sign up failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgot = async () => {
+    setError('')
+    if (!email.trim()) { setError('Enter your email address'); return }
+    setLoading(true)
+    try {
+      await sendPasswordReset(email.trim())
+      setScreen('reset-sent')
+    } catch (e) {
+      setError(e.message || 'Could not send reset email')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewPassword = async () => {
+    setError('')
+    if (newPass.length < 6) { setError('Password must be at least 6 characters'); return }
+    setLoading(true)
+    try {
+      await updatePassword(newPass)
+      setScreen('signin')
+    } catch (e) {
+      setError(e.message || 'Could not update password')
     } finally {
       setLoading(false)
     }
@@ -138,10 +170,16 @@ export default function UserSetup() {
               {loading ? 'LOADING...' : '⚡ ENTER THE ARENA'}
             </motion.button>
 
-            <button onClick={() => { setScreen('signup'); setError('') }}
-              className="w-full py-2 font-orbitron text-xs text-gray-600 hover:text-gray-400 transition-colors">
-              No account? CREATE ONE →
-            </button>
+            <div className="flex justify-between">
+              <button onClick={() => { setScreen('forgot'); setError('') }}
+                className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors py-2">
+                Forgot password?
+              </button>
+              <button onClick={() => { setScreen('signup'); setError('') }}
+                className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors py-2">
+                No account? CREATE →
+              </button>
+            </div>
           </motion.div>
         )}
 
@@ -236,6 +274,97 @@ export default function UserSetup() {
               className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold"
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff', boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
               {loading ? 'SAVING...' : '⚡ ENTER THE ARENA'}
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* ── Forgot password ── */}
+        {screen === 'forgot' && (
+          <motion.div key="forgot" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }} className="relative z-10 w-full max-w-sm">
+
+            <p className="font-orbitron text-xs text-gray-400 tracking-widest text-center mb-2">
+              ✦ RESET PASSWORD ✦
+            </p>
+            <p className="font-rajdhani text-xs text-gray-500 text-center mb-5">
+              Enter your email and we'll send you a reset link
+            </p>
+
+            <div className="glass-card rounded-2xl p-5 mb-4"
+              style={{ border: '1px solid rgba(0,245,255,0.15)' }}>
+              <input type="email" value={email}
+                onChange={e => { setEmail(e.target.value); setError('') }}
+                onKeyDown={e => e.key === 'Enter' && handleForgot()}
+                placeholder="YOUR EMAIL" autoComplete="email"
+                className="w-full bg-transparent border border-gray-700 rounded-xl px-4 py-3
+                           font-orbitron text-xs text-white placeholder-gray-700 tracking-wider
+                           focus:outline-none focus:border-arcade-cyan transition-all" />
+            </div>
+
+            {error && <p className="text-arcade-pink text-xs font-rajdhani text-center mb-3">{error}</p>}
+
+            <motion.button whileTap={{ scale: 0.96 }} onClick={handleForgot} disabled={loading}
+              className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold mb-3"
+              style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff' }}>
+              {loading ? 'SENDING...' : '📧 SEND RESET LINK'}
+            </motion.button>
+
+            <button onClick={() => { setScreen('signin'); setError('') }}
+              className="w-full py-2 font-orbitron text-xs text-gray-600 hover:text-gray-400 transition-colors">
+              ← BACK TO SIGN IN
+            </button>
+          </motion.div>
+        )}
+
+        {/* ── Reset email sent ── */}
+        {screen === 'reset-sent' && (
+          <motion.div key="reset-sent" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="relative z-10 w-full max-w-sm text-center">
+
+            <div className="text-5xl mb-4">📬</div>
+            <h2 className="font-orbitron text-lg font-black neon-text-cyan mb-2">CHECK YOUR EMAIL</h2>
+            <p className="font-rajdhani text-sm text-gray-400 mb-2">
+              A password reset link has been sent to
+            </p>
+            <p className="font-orbitron text-xs mb-6" style={{ color: '#00f5ff' }}>{email}</p>
+            <p className="font-rajdhani text-xs text-gray-600 mb-6">
+              Click the link in the email — it'll bring you back here to set a new password.
+            </p>
+
+            <button onClick={() => { setScreen('signin'); setError('') }}
+              className="w-full py-3 rounded-xl font-orbitron text-xs text-gray-500 border border-gray-800 hover:text-gray-300 transition-all">
+              ← BACK TO SIGN IN
+            </button>
+          </motion.div>
+        )}
+
+        {/* ── Set new password (after clicking reset link) ── */}
+        {screen === 'new-password' && (
+          <motion.div key="new-password" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="relative z-10 w-full max-w-sm">
+
+            <div className="text-center mb-5">
+              <div className="text-4xl mb-2">🔐</div>
+              <p className="font-orbitron text-xs text-gray-400 tracking-widest">✦ SET NEW PASSWORD ✦</p>
+            </div>
+
+            <div className="glass-card rounded-2xl p-5 mb-4"
+              style={{ border: '1px solid rgba(0,245,255,0.2)' }}>
+              <input type="password" value={newPass}
+                onChange={e => { setNewPass(e.target.value); setError('') }}
+                onKeyDown={e => e.key === 'Enter' && handleNewPassword()}
+                placeholder="NEW PASSWORD (min 6 chars)" autoComplete="new-password"
+                className="w-full bg-transparent border border-gray-700 rounded-xl px-4 py-3
+                           font-orbitron text-xs text-white placeholder-gray-700 tracking-wider
+                           focus:outline-none focus:border-arcade-cyan transition-all" />
+            </div>
+
+            {error && <p className="text-arcade-pink text-xs font-rajdhani text-center mb-3">{error}</p>}
+
+            <motion.button whileTap={{ scale: 0.96 }} onClick={handleNewPassword} disabled={loading}
+              className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold"
+              style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff', boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
+              {loading ? 'SAVING...' : '⚡ SAVE NEW PASSWORD'}
             </motion.button>
           </motion.div>
         )}

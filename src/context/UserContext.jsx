@@ -74,13 +74,14 @@ function profileToUser(p) {
 
 // ── Provider ───────────────────────────────────────────────
 export function UserProvider({ children }) {
-  const [authUser,     setAuthUser]     = useState(null)
-  const [profile,      setProfile]      = useState(null)
-  const [scores,       setScores]       = useState({})
-  const [matchHistory, setMatchHistory] = useState([])
-  const [achievements, setAchievements] = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [needsProfile, setNeedsProfile] = useState(false)
+  const [authUser,          setAuthUser]          = useState(null)
+  const [profile,           setProfile]           = useState(null)
+  const [scores,            setScores]            = useState({})
+  const [matchHistory,      setMatchHistory]      = useState([])
+  const [achievements,      setAchievements]      = useState([])
+  const [loading,           setLoading]           = useState(true)
+  const [needsProfile,      setNeedsProfile]      = useState(false)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   // Refs so recordGame callbacks never go stale
   const scoresRef      = useRef({})
@@ -120,9 +121,16 @@ export function UserProvider({ children }) {
   // ── Auth state listener ─────────────────────────────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          // User clicked the reset link — show the new-password screen
+          setIsPasswordRecovery(true)
+          setLoading(false)
+          return
+        }
         const u = session?.user || null
         setAuthUser(u)
+        setIsPasswordRecovery(false)
         if (u) {
           await loadUserData(u.id)
         } else {
@@ -149,6 +157,18 @@ export function UserProvider({ children }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
+  }, [])
+
+  const sendPasswordReset = useCallback(async (email) => {
+    const redirectTo = `${window.location.origin}/`
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+    if (error) throw error
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+    setIsPasswordRecovery(false)
   }, [])
 
   const createProfile = useCallback(async (username, avatar = '🎮') => {
@@ -291,8 +311,9 @@ export function UserProvider({ children }) {
   return (
     <Ctx.Provider value={{
       user, scores, matchHistory, achievements,
-      loading, needsProfile, authUser,
+      loading, needsProfile, isPasswordRecovery, authUser,
       signUp, signIn, signOut, createProfile,
+      sendPasswordReset, updatePassword,
       recordGame, updateScore,
     }}>
       {children}
