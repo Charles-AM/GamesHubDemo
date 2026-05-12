@@ -122,8 +122,12 @@ export function UserProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
+    // Safety net — never stay on loading screen more than 5s
+    const safetyTimer = setTimeout(() => { if (mounted) setLoading(false) }, 5000)
+
     // If this is a password recovery link, skip getSession — let onAuthStateChange handle it
     const isRecoveryUrl = window.location.hash.includes('type=recovery')
+                       || window.location.search.includes('type=recovery')
 
     // Fast path: read session — bail out after 4s if Supabase is cold/paused
     const timeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
@@ -164,7 +168,7 @@ export function UserProvider({ children }) {
         }
       }
     )
-    return () => { mounted = false; subscription.unsubscribe() }
+    return () => { mounted = false; clearTimeout(safetyTimer); subscription.unsubscribe() }
   }, [loadUserData])
 
   // ── Auth actions ────────────────────────────────────────
