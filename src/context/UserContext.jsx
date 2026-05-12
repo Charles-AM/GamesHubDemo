@@ -118,6 +118,12 @@ export function UserProvider({ children }) {
     setLoading(false)
   }, [])
 
+  // ── Safety net: if Supabase never fires, stop loading after 6s ──
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 6000)
+    return () => clearTimeout(t)
+  }, [])
+
   // ── Auth state listener ─────────────────────────────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
