@@ -99,10 +99,11 @@ export default function UserSetup() {
     if (newPass.length < 6) { setError('Password must be at least 6 characters'); return }
     setLoading(true)
     try {
-      await updatePassword(newPass)
-      // isPasswordRecovery flips false → useEffect clears screen → App routes to /hub
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000))
+      await Promise.race([updatePassword(newPass), timeout])
     } catch (e) {
-      setError(e.message || 'Could not update password')
+      if (e.message === 'timeout') setError('Connection timed out — please try again')
+      else setError(e.message || 'Could not update password')
     } finally {
       setLoading(false)
     }
