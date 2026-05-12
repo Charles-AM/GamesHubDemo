@@ -143,11 +143,20 @@ export function UserProvider({ children }) {
       }
     })
 
-    // Listen for subsequent auth changes (sign in, sign out, password recovery)
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
-        if (event === 'INITIAL_SESSION') return // already handled by getSession() above
+
+        // For recovery URLs, INITIAL_SESSION carries the recovery session — treat it as recovery
+        if (event === 'INITIAL_SESSION' && isRecoveryUrl && session?.user) {
+          setAuthUser(session.user)
+          setIsPasswordRecovery(true)
+          await loadUserData(session.user.id)
+          return
+        }
+        // For normal URLs, INITIAL_SESSION is already handled by getSession()
+        if (event === 'INITIAL_SESSION') return
 
         if (event === 'PASSWORD_RECOVERY') {
           const u = session?.user || null
