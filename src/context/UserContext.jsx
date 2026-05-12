@@ -149,7 +149,7 @@ export function UserProvider({ children }) {
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return
 
         // INITIAL_SESSION or SIGNED_IN on a recovery link — show new-password screen
@@ -157,18 +157,18 @@ export function UserProvider({ children }) {
           const u = session?.user || null
           setAuthUser(u)
           setIsPasswordRecovery(true)
-          if (u) await loadUserData(u.id)
+          if (u) loadUserData(u.id) // no await — don't block Supabase's internal event loop
           else setLoading(false)
           return
         }
 
-        if (event === 'INITIAL_SESSION') return // already handled by getSession() above
+        if (event === 'INITIAL_SESSION') return // handled by getSession() above
 
         if (event === 'PASSWORD_RECOVERY') {
           const u = session?.user || null
           setAuthUser(u)
           setIsPasswordRecovery(true)
-          if (u) await loadUserData(u.id)
+          if (u) loadUserData(u.id) // no await
           else setLoading(false)
           return
         }
@@ -177,7 +177,7 @@ export function UserProvider({ children }) {
         setAuthUser(u)
         setIsPasswordRecovery(false)
         if (u) {
-          await loadUserData(u.id)
+          loadUserData(u.id) // no await
         } else {
           setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
           setNeedsProfile(false); setLoading(false)
