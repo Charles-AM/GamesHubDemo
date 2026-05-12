@@ -4,6 +4,20 @@ import { useUser, AVATARS } from '../context/UserContext'
 
 const FLOATERS = ['🎮','🕹️','⚡','🏆','🎯','🌟','🔥','💥','🎲','👾']
 
+// Rate limiting helpers — outside component so they don't recreate on every render
+const LIMIT_KEY        = 'arcadia_signin_attempts'
+const getLimitData     = () => JSON.parse(sessionStorage.getItem(LIMIT_KEY) || '{"count":0,"lockedUntil":0}')
+const isLocked         = () => getLimitData().lockedUntil > Date.now()
+const lockSecondsLeft  = () => Math.ceil((getLimitData().lockedUntil - Date.now()) / 1000)
+const clearAttempts    = () => sessionStorage.removeItem(LIMIT_KEY)
+const recordFailedAttempt = () => {
+  const d     = getLimitData()
+  const count = d.count + 1
+  const lockedUntil = count >= 5 ? Date.now() + 15 * 60 * 1000 : 0
+  sessionStorage.setItem(LIMIT_KEY, JSON.stringify({ count, lockedUntil }))
+  return count
+}
+
 export default function UserSetup() {
   const { signIn, signUp, signOut, createProfile, needsProfile,
           sendPasswordReset, updatePassword, isPasswordRecovery } = useUser()
@@ -20,20 +34,6 @@ export default function UserSetup() {
   const [avatar,   setAvatar]   = useState(AVATARS[0])
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
-
-  // Rate limiting — lock after 5 failed sign-in attempts for 15 minutes
-  const LIMIT_KEY = 'arcadia_signin_attempts'
-  const getLimitData = () => JSON.parse(sessionStorage.getItem(LIMIT_KEY) || '{"count":0,"lockedUntil":0}')
-  const isLocked = () => { const d = getLimitData(); return d.lockedUntil > Date.now() }
-  const lockSecondsLeft = () => Math.ceil((getLimitData().lockedUntil - Date.now()) / 1000)
-  const recordFailedAttempt = () => {
-    const d = getLimitData()
-    const count = d.count + 1
-    const lockedUntil = count >= 5 ? Date.now() + 15 * 60 * 1000 : 0
-    sessionStorage.setItem(LIMIT_KEY, JSON.stringify({ count, lockedUntil }))
-    return count
-  }
-  const clearAttempts = () => sessionStorage.removeItem(LIMIT_KEY)
 
   // Keep screen in sync when context flags change (must be in useEffect, not render)
   useEffect(() => {
@@ -336,7 +336,7 @@ export default function UserSetup() {
             <div className="glass-card rounded-2xl p-4 mb-6 text-left"
               style={{ border: '1px solid rgba(0,245,255,0.15)' }}>
               {[
-                '1. Open the email from Supabase',
+                '1. Open the email from Arcadia Duels',
                 '2. Click "Confirm your email"',
                 '3. You\'ll be brought back here',
                 '4. Pick your avatar & callsign',

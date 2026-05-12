@@ -46,7 +46,7 @@ export default function Leaderboard() {
         } else if (activeTab === 'vs') {
           wins  = scoreRows.reduce((a, s) => a + (s.wins  || 0), 0)
           plays = scoreRows.reduce((a, s) => a + (s.plays || 0), 0)
-          score = wins // rank by total VS wins
+          score = wins
         } else {
           const row = scoreRows.find(s => s.game === activeTab)
           score = row?.best  || 0
@@ -55,7 +55,9 @@ export default function Leaderboard() {
         }
 
         return { id: p.id, username: p.username, avatar: p.avatar, xp: p.xp, score, plays, wins }
-      }).sort((a, b) => b.score - a.score)
+      })
+      .filter(p => activeTab === 'vs' ? p.plays > 0 : p.score > 0) // hide inactive players
+      .sort((a, b) => b.score - a.score)
 
       if (!cancelled) { setRows(ranked); setFetching(false) }
     }

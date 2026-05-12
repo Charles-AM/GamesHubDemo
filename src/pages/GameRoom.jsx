@@ -812,29 +812,3 @@ function WaitingCard() {
   )
 }
 
-function ScoreCard({ name, avatar, score, winner, draw, you }) {
-  const color = winner ? '#00ff88' : draw ? '#ffd700' : '#ff006e'
-  return (
-    <div className="flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl relative overflow-hidden"
-      style={{
-        background: (winner || draw) ? `${color}08` : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${(winner || draw) ? color + '35' : 'rgba(255,255,255,0.08)'}`,
-      }}>
-      {you && (
-        <span className="absolute top-2 right-2 font-orbitron text-[7px] px-1.5 py-0.5 rounded"
-          style={{ background: 'rgba(0,245,255,0.15)', color: '#00f5ff' }}>YOU</span>
-      )}
-      {winner && (
-        <span className="absolute top-2 left-2 text-xs">👑</span>
-      )}
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mt-2"
-        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        {avatar}
-      </div>
-      <p className="font-orbitron text-[10px] text-gray-400 truncate max-w-[80px]">{name}</p>
-      <p className="font-orbitron text-2xl font-black" style={{ color: (winner || draw) ? color : '#444' }}>
-        {score.toLocaleString()}
-      </p>
-    </div>
-  )
-}

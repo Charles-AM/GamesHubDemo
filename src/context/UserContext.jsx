@@ -364,7 +364,7 @@ export function UserProvider({ children }) {
   return (
     <Ctx.Provider value={{
       user, scores, matchHistory, achievements,
-      loading, needsProfile, isPasswordRecovery, authUser,
+      loading, needsProfile, isPasswordRecovery,
       signUp, signIn, signOut, createProfile,
       sendPasswordReset, updatePassword, deleteAccount,
       recordGame, updateScore,
