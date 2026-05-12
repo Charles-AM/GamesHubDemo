@@ -122,27 +122,45 @@ export function UserProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
-    // Safety net — never stay on loading screen more than 5s
+    // Safety net — never hang on loading screen
     const safetyTimer = setTimeout(() => { if (mounted) setLoading(false) }, 5000)
 
-    // Fast initial session check — 4s timeout in case Supabase is slow
-    const sessionTimeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
-    Promise.race([supabase.auth.getSession(), sessionTimeout]).then(async ({ data: { session } }) => {
-      if (!mounted) return
-      const u = session?.user || null
-      setAuthUser(u)
-      // Do NOT touch isPasswordRecovery here — onAuthStateChange owns that flag
-      if (u) await loadUserData(u.id)
-      else {
-        setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
-        setNeedsProfile(false); setLoading(false)
-      }
-    })
+    // Detect implicit-flow recovery link (#type=recovery in hash)
+    const isRecoveryLink = window.location.hash.includes('type=recovery')
+
+    if (isRecoveryLink) {
+      // Recovery link: let onAuthStateChange handle everything — don't call getSession
+      // (getSession would navigate the user to hub before recovery state is set)
+    } else {
+      // Normal load: fast session check with 4s timeout
+      const sessionTimeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
+      Promise.race([supabase.auth.getSession(), sessionTimeout]).then(async ({ data: { session } }) => {
+        if (!mounted) return
+        const u = session?.user || null
+        setAuthUser(u)
+        if (u) await loadUserData(u.id)
+        else {
+          setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
+          setNeedsProfile(false); setLoading(false)
+        }
+      })
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
-        if (event === 'INITIAL_SESSION') return // handled by getSession() above
+
+        // INITIAL_SESSION on a recovery link — treat it as PASSWORD_RECOVERY
+        if (event === 'INITIAL_SESSION' && isRecoveryLink) {
+          const u = session?.user || null
+          setAuthUser(u)
+          setIsPasswordRecovery(true)
+          if (u) await loadUserData(u.id)
+          else setLoading(false)
+          return
+        }
+
+        if (event === 'INITIAL_SESSION') return // already handled by getSession() above
 
         if (event === 'PASSWORD_RECOVERY') {
           const u = session?.user || null
