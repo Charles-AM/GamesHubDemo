@@ -425,74 +425,177 @@ export default function GameRoom() {
         {/* ── WAITING ── */}
         {screen === 'waiting' && room && (
           <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="relative z-10 flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-            <motion.div className="text-6xl mb-6"
-              animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-              ⏳
-            </motion.div>
-            <p className="font-orbitron text-[10px] text-gray-500 tracking-widest mb-3">YOUR SCORE</p>
-            <p className="font-orbitron text-6xl font-black text-white mb-8">{myScore?.toLocaleString()}</p>
-            <div className="flex items-center gap-2 mb-3">
-              {[0,1,2].map(i => (
-                <motion.div key={i} className="w-2 h-2 rounded-full"
-                  style={{ background: '#00f5ff' }}
-                  animate={{ opacity: [0.2, 1, 0.2] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.4 }} />
-              ))}
+            className="relative z-10 px-4 pt-4">
+
+            {/* Your score locked in */}
+            <div className="text-center mb-6">
+              <p className="font-orbitron text-[10px] text-gray-500 tracking-widest mb-2">YOUR SCORE IS IN</p>
+              <motion.p initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+                className="font-orbitron text-7xl font-black"
+                style={{ color: '#00f5ff', textShadow: '0 0 40px rgba(0,245,255,0.5)' }}>
+                {myScore?.toLocaleString()}
+              </motion.p>
             </div>
-            <p className="font-rajdhani text-sm text-gray-500">
-              Waiting for {isHost ? room.guest_username : room.host_username} to finish...
+
+            {/* Head-to-head preview */}
+            <div className="rounded-2xl p-4 mb-5"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="font-orbitron text-[9px] text-gray-600 tracking-widest text-center mb-4">HEAD-TO-HEAD</p>
+              <div className="flex items-center gap-3">
+                {/* You */}
+                <div className="flex-1 text-center">
+                  <div className="text-2xl mb-1">{user.avatar}</div>
+                  <p className="font-orbitron text-[10px] text-gray-400 truncate">{user.username}</p>
+                  <p className="font-orbitron text-2xl font-black mt-1" style={{ color: '#00f5ff' }}>
+                    {myScore?.toLocaleString()}
+                  </p>
+                </div>
+                {/* VS */}
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <span className="font-orbitron text-xs font-black text-gray-700">VS</span>
+                </div>
+                {/* Opponent */}
+                <div className="flex-1 text-center">
+                  <div className="text-2xl mb-1">
+                    {isHost ? room.guest_avatar : room.host_avatar}
+                  </div>
+                  <p className="font-orbitron text-[10px] text-gray-400 truncate">
+                    {isHost ? room.guest_username : room.host_username}
+                  </p>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    {[0,1,2].map(i => (
+                      <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: '#bf00ff' }}
+                        animate={{ opacity: [0.2, 1, 0.2] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="font-rajdhani text-xs text-gray-600 text-center tracking-widest">
+              WAITING FOR {(isHost ? room.guest_username : room.host_username)?.toUpperCase()} TO FINISH...
             </p>
           </motion.div>
         )}
 
         {/* ── RESULTS ── */}
         {screen === 'results' && room && (() => {
-          const hostScore  = room.host_score  ?? 0
-          const guestScore = room.guest_score ?? 0
+          const hostScore     = room.host_score  ?? 0
+          const guestScore    = room.guest_score ?? 0
           const myFinalScore  = isHost ? hostScore  : guestScore
           const oppFinalScore = isHost ? guestScore : hostScore
-          const oppName   = isHost ? room.guest_username : room.host_username
-          const oppAvatar = isHost ? room.guest_avatar  : room.host_avatar
-          const iWon  = myFinalScore  > oppFinalScore
+          const oppName       = isHost ? room.guest_username : room.host_username
+          const oppAvatar     = isHost ? room.guest_avatar   : room.host_avatar
+          const iWon   = myFinalScore  > oppFinalScore
           const isDraw = myFinalScore === oppFinalScore
-          const g = GAME_REGISTRY[room.game]
+          const g      = GAME_REGISTRY[room.game]
+          const total  = myFinalScore + oppFinalScore || 1
+          const myPct  = Math.round((myFinalScore / total) * 100)
+          const oppPct = 100 - myPct
+          const diff   = Math.abs(myFinalScore - oppFinalScore)
+          const outcomeColor = isDraw ? '#ffd700' : iWon ? '#00ff88' : '#ff006e'
 
           return (
             <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }} className="relative z-10 px-4 pt-2">
+              exit={{ opacity: 0 }} className="relative z-10 px-4 pt-2 pb-6">
 
-              {/* Outcome */}
-              <div className="text-center mb-6">
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                  className="text-6xl mb-3">
-                  {isDraw ? '🤝' : iWon ? '🏆' : '😤'}
-                </motion.div>
-                <h2 className="font-orbitron text-2xl font-black mb-1"
-                  style={{ color: isDraw ? '#ffd700' : iWon ? '#00ff88' : '#ff006e',
-                    textShadow: `0 0 30px ${isDraw ? 'rgba(255,215,0,0.5)' : iWon ? 'rgba(0,255,136,0.5)' : 'rgba(255,0,110,0.5)'}` }}>
-                  {isDraw ? 'IT\'S A DRAW' : iWon ? 'YOU WIN!' : 'YOU LOSE!'}
+              {/* Outcome banner */}
+              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 180, delay: 0.05 }}
+                className="text-center rounded-2xl py-5 mb-4"
+                style={{ background: `${outcomeColor}10`, border: `1px solid ${outcomeColor}40` }}>
+                <div className="text-5xl mb-2">{isDraw ? '🤝' : iWon ? '🏆' : '😤'}</div>
+                <h2 className="font-orbitron text-3xl font-black"
+                  style={{ color: outcomeColor, textShadow: `0 0 30px ${outcomeColor}80` }}>
+                  {isDraw ? "IT'S A DRAW" : iWon ? 'YOU WIN!' : 'YOU LOSE!'}
                 </h2>
-                <p className="font-orbitron text-xs" style={{ color: g.color }}>{g.icon} {g.label}</p>
-              </div>
+                <p className="font-orbitron text-[10px] mt-1" style={{ color: g.color }}>
+                  {g.icon} {g.label}
+                </p>
+              </motion.div>
 
-              {/* Score cards */}
-              <div className="flex items-stretch gap-3 mb-5">
-                <ScoreCard name={user.username} avatar={user.avatar} score={myFinalScore}
-                  winner={iWon} draw={isDraw} you />
-                <div className="flex items-center justify-center flex-shrink-0">
-                  <span className="font-orbitron text-lg font-black text-gray-700">VS</span>
+              {/* Head-to-head scores */}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="rounded-2xl p-4 mb-3"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+
+                <p className="font-orbitron text-[9px] text-gray-600 tracking-widest text-center mb-4">
+                  HEAD-TO-HEAD
+                </p>
+
+                {/* Player row */}
+                <div className="flex items-center gap-3 mb-4">
+                  {/* You */}
+                  <div className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                      style={{ background: iWon ? 'rgba(0,255,136,0.1)' : isDraw ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.05)',
+                               border: `2px solid ${iWon ? '#00ff88' : isDraw ? '#ffd700' : 'rgba(255,255,255,0.1)'}` }}>
+                      {user.avatar}
+                    </div>
+                    <p className="font-orbitron text-[10px] text-gray-400 truncate max-w-[70px] text-center">
+                      {user.username}
+                    </p>
+                    {iWon && <span className="text-xs">👑</span>}
+                  </div>
+
+                  {/* Score comparison */}
+                  <div className="flex-1 flex flex-col items-center gap-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-orbitron text-2xl font-black"
+                        style={{ color: iWon ? '#00ff88' : isDraw ? '#ffd700' : '#ff006e' }}>
+                        {myFinalScore.toLocaleString()}
+                      </span>
+                      <span className="font-orbitron text-xs text-gray-700">–</span>
+                      <span className="font-orbitron text-2xl font-black"
+                        style={{ color: !iWon && !isDraw ? '#00ff88' : isDraw ? '#ffd700' : '#ff006e' }}>
+                        {oppFinalScore.toLocaleString()}
+                      </span>
+                    </div>
+                    {!isDraw && (
+                      <p className="font-rajdhani text-[11px] text-gray-600">
+                        by {diff.toLocaleString()} pts
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Opponent */}
+                  <div className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                      style={{ background: !iWon && !isDraw ? 'rgba(0,255,136,0.1)' : isDraw ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.05)',
+                               border: `2px solid ${!iWon && !isDraw ? '#00ff88' : isDraw ? '#ffd700' : 'rgba(255,255,255,0.1)'}` }}>
+                      {oppAvatar}
+                    </div>
+                    <p className="font-orbitron text-[10px] text-gray-400 truncate max-w-[70px] text-center">
+                      {oppName}
+                    </p>
+                    {!iWon && !isDraw && <span className="text-xs">👑</span>}
+                  </div>
                 </div>
-                <ScoreCard name={oppName} avatar={oppAvatar} score={oppFinalScore}
-                  winner={!iWon && !isDraw} draw={isDraw} />
-              </div>
+
+                {/* Score bar */}
+                <div className="flex h-2 rounded-full overflow-hidden gap-px">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${myPct}%` }}
+                    transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+                    style={{ background: iWon ? '#00ff88' : isDraw ? '#ffd700' : '#ff006e', borderRadius: '999px 0 0 999px' }} />
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${oppPct}%` }}
+                    transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+                    style={{ background: !iWon && !isDraw ? '#00ff88' : isDraw ? '#ffd700' : '#ff4444', borderRadius: '0 999px 999px 0' }} />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="font-orbitron text-[9px]" style={{ color: '#555' }}>{myPct}%</span>
+                  <span className="font-orbitron text-[9px]" style={{ color: '#555' }}>{oppPct}%</span>
+                </div>
+              </motion.div>
 
               {/* XP / achievements */}
               {rewardInfo && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="rounded-2xl p-4 mb-5"
+                  className="rounded-2xl p-4 mb-4"
                   style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.2)' }}>
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">XP EARNED</p>
