@@ -4,6 +4,7 @@ import WordleGame from '../games/wordle/WordleGame'
 import WordSearchGame from '../games/wordsearch/WordSearchGame'
 import CrosswordGame from '../games/crossword/CrosswordGame'
 import FlagGame from '../games/flags/FlagGame'
+import VersusGame from './VersusGame'
 
 const GAMES = {
   trivia:     TriviaGame,
@@ -15,7 +16,8 @@ const GAMES = {
 
 export default function GamePage() {
   const { gameId, mode } = useParams()
+  if (!GAMES[gameId]) return <Navigate to="/hub" />
+  if (mode === 'versus') return <VersusGame gameId={gameId} />
   const GameComponent = GAMES[gameId]
-  if (!GameComponent) return <Navigate to="/hub" />
-  return <GameComponent mode={mode} />
+  return <GameComponent />
 }

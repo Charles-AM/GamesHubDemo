@@ -86,7 +86,7 @@ function getLineCells(start, end) {
   return cells
 }
 
-export default function WordSearchGame() {
+export default function WordSearchGame({ onFinish }) {
   const [grid, setGrid] = useState([])
   const [placedWords, setPlacedWords] = useState([])
   const [foundWords, setFoundWords] = useState([])
@@ -147,7 +147,8 @@ export default function WordSearchGame() {
         if (newFound.length === placedWords.length) {
           const score = newFound.length * 100 + timeLeft * 5
           updateScore('wordsearch', score)
-          setTimeout(() => setPhase('result'), 600)
+          if (onFinish) { setTimeout(() => onFinish(score), 600) }
+          else setTimeout(() => setPhase('result'), 600)
         }
         return
       }

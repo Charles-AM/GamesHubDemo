@@ -24,7 +24,7 @@ const KEYBOARD = [
   ['⌫','Z','X','C','V','B','N','M','✓'],
 ]
 
-export default function CrosswordGame() {
+export default function CrosswordGame({ onFinish }) {
   const [puzzle, setPuzzle]       = useState(null)
   const [userGrid, setUserGrid]   = useState([])
   const [activeCell, setActiveCell] = useState(null)
@@ -146,7 +146,8 @@ export default function CrosswordGame() {
       if (newDone.size >= totalWords) {
         const score = newDone.size * 100 + timeLeft * 3
         updateScore('crossword', score)
-        setTimeout(() => setPhase('result'), 500)
+        if (onFinish) { setTimeout(() => onFinish(score), 500) }
+        else setTimeout(() => setPhase('result'), 500)
         return
       }
 

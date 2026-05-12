@@ -111,7 +111,7 @@ const TILE_COLORS = {
   active:  { bg: 'transparent', border: '#00f5ff', text: '#fff' },
 }
 
-export default function WordleGame() {
+export default function WordleGame({ onFinish }) {
   const [target, setTarget] = useState('')
   const [guesses, setGuesses] = useState([])
   const [current, setCurrent] = useState('')
@@ -162,8 +162,10 @@ export default function WordleGame() {
         const score = (MAX_GUESSES - newGuesses.length + 1) * 100
         updateScore('wordle', score)
         setPhase('won')
+        if (onFinish) onFinish(score)
       } else if (newGuesses.length >= MAX_GUESSES) {
         setPhase('lost')
+        if (onFinish) onFinish(0)
       }
     }, 5 * 300 + 200)
   }, [current, guesses, target, letterMap, updateScore])
