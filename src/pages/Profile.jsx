@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser, ACHIEVEMENTS, getLevel, getLevelPct, getXpToNext, XP_PER_LEVEL } from '../context/UserContext'
 import { GAME_LIST } from '../games/gameRegistry'
@@ -18,10 +19,26 @@ const GAME_ICON  = { trivia: '🧠', wordle: '🔤', crossword: '✏️', wordse
 const GAME_NAME  = { trivia: 'TRIVIA', wordle: 'WORDLE', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS' }
 
 export default function Profile() {
-  const { user, scores, matchHistory, achievements } = useUser()
+  const { user, scores, matchHistory, achievements, deleteAccount, signOut } = useUser()
   const navigate = useNavigate()
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteInput,     setDeleteInput]     = useState('')
+  const [deleteLoading,   setDeleteLoading]   = useState(false)
+  const [deleteError,     setDeleteError]     = useState('')
 
   if (!user) { navigate('/'); return null }
+
+  const handleDelete = async () => {
+    if (deleteInput !== 'DELETE') { setDeleteError('Type DELETE to confirm'); return }
+    setDeleteLoading(true)
+    try {
+      await deleteAccount()
+      navigate('/')
+    } catch (e) {
+      setDeleteError(e.message || 'Could not delete account')
+      setDeleteLoading(false)
+    }
+  }
 
   const xp        = user.xp || 0
   const level     = getLevel(xp)
@@ -172,6 +189,15 @@ export default function Profile() {
       </div>
 
       {/* ── Match History ── */}
+      {/* ── Sign out ── */}
+      <div className="relative z-10 mb-4">
+        <button onClick={signOut}
+          className="w-full py-3 rounded-xl font-orbitron text-xs tracking-widest transition-all"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#666' }}>
+          SIGN OUT
+        </button>
+      </div>
+
       {matchHistory.length > 0 && (
         <div className="relative z-10">
           <SectionTitle text="MATCH HISTORY" />
@@ -214,7 +240,86 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* ── Danger zone ── */}
+      <div className="relative z-10 mt-4 mb-2">
+        <div className="rounded-2xl p-4" style={{ border: '1px solid rgba(255,0,110,0.2)', background: 'rgba(255,0,110,0.04)' }}>
+          <p className="font-orbitron text-[10px] text-gray-600 tracking-widest mb-3">DANGER ZONE</p>
+          <button onClick={() => { setShowDeleteModal(true); setDeleteInput(''); setDeleteError('') }}
+            className="w-full py-2.5 rounded-xl font-orbitron text-xs tracking-widest transition-all"
+            style={{ background: 'rgba(255,0,110,0.08)', border: '1px solid rgba(255,0,110,0.3)', color: '#ff006e' }}>
+            🗑 DELETE ACCOUNT
+          </button>
+          <p className="font-rajdhani text-[10px] text-gray-700 text-center mt-2">
+            Permanently removes all your data
+          </p>
+        </div>
+      </div>
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <DeleteModal
+            input={deleteInput}
+            setInput={setDeleteInput}
+            error={deleteError}
+            loading={deleteLoading}
+            onConfirm={handleDelete}
+            onClose={() => setShowDeleteModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  )
+}
+
+function DeleteModal({ input, setInput, error, loading, onConfirm, onClose }) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center px-5"
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.85, y: 20 }} animate={{ scale: 1, y: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-sm rounded-3xl p-6"
+        style={{ background: 'rgba(12,12,30,0.98)', border: '1px solid rgba(255,0,110,0.4)' }}>
+
+        <div className="text-3xl text-center mb-3">⚠️</div>
+        <h3 className="font-orbitron text-base font-black text-center neon-text-pink mb-2">
+          DELETE ACCOUNT
+        </h3>
+        <p className="font-rajdhani text-sm text-gray-400 text-center mb-4 leading-relaxed">
+          This permanently deletes your profile, scores, achievements and match history.
+          <span className="text-white font-bold"> This cannot be undone.</span>
+        </p>
+
+        <p className="font-orbitron text-[10px] text-gray-500 tracking-widest mb-2">
+          TYPE <span className="text-arcade-pink">DELETE</span> TO CONFIRM
+        </p>
+        <input value={input} onChange={e => setInput(e.target.value)}
+          placeholder="DELETE" autoCapitalize="characters"
+          className="w-full bg-transparent border border-gray-700 rounded-xl px-4 py-3 mb-3
+                     font-orbitron text-sm text-white placeholder-gray-700 tracking-widest
+                     focus:outline-none focus:border-arcade-pink transition-all" />
+
+        {error && <p className="text-arcade-pink text-xs font-rajdhani text-center mb-3">{error}</p>}
+
+        <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={loading}
+          className="w-full py-3 rounded-xl font-orbitron text-sm font-bold tracking-widest mb-2"
+          style={{
+            background: input === 'DELETE' ? 'rgba(255,0,110,0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${input === 'DELETE' ? '#ff006e' : 'rgba(255,255,255,0.1)'}`,
+            color: input === 'DELETE' ? '#ff006e' : '#444',
+          }}>
+          {loading ? 'DELETING...' : '🗑 DELETE MY ACCOUNT'}
+        </motion.button>
+
+        <button onClick={onClose}
+          className="w-full py-2 font-orbitron text-xs text-gray-600 hover:text-gray-400 transition-colors">
+          CANCEL
+        </button>
+      </motion.div>
+    </motion.div>
   )
 }
 

@@ -159,6 +159,13 @@ export function UserProvider({ children }) {
     await supabase.auth.signOut()
   }, [])
 
+  const deleteAccount = useCallback(async () => {
+    const { error } = await supabase.rpc('delete_user')
+    if (error) throw error
+    // Auth state listener will fire and clear everything
+    await supabase.auth.signOut()
+  }, [])
+
   const sendPasswordReset = useCallback(async (email) => {
     const redirectTo = `${window.location.origin}/`
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
@@ -313,7 +320,7 @@ export function UserProvider({ children }) {
       user, scores, matchHistory, achievements,
       loading, needsProfile, isPasswordRecovery, authUser,
       signUp, signIn, signOut, createProfile,
-      sendPasswordReset, updatePassword,
+      sendPasswordReset, updatePassword, deleteAccount,
       recordGame, updateScore,
     }}>
       {children}

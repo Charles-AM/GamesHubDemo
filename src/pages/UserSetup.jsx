@@ -19,19 +19,36 @@ export default function UserSetup() {
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
 
+  // Rate limiting — lock after 5 failed sign-in attempts for 15 minutes
+  const LIMIT_KEY = 'arcadia_signin_attempts'
+  const getLimitData = () => JSON.parse(sessionStorage.getItem(LIMIT_KEY) || '{"count":0,"lockedUntil":0}')
+  const isLocked = () => { const d = getLimitData(); return d.lockedUntil > Date.now() }
+  const lockSecondsLeft = () => Math.ceil((getLimitData().lockedUntil - Date.now()) / 1000)
+  const recordFailedAttempt = () => {
+    const d = getLimitData()
+    const count = d.count + 1
+    const lockedUntil = count >= 5 ? Date.now() + 15 * 60 * 1000 : 0
+    sessionStorage.setItem(LIMIT_KEY, JSON.stringify({ count, lockedUntil }))
+    return count
+  }
+  const clearAttempts = () => sessionStorage.removeItem(LIMIT_KEY)
+
   // Keep screen in sync when context flags change
   if (isPasswordRecovery && screen !== 'new-password') setScreen('new-password')
   else if (!isPasswordRecovery && needsProfile && screen !== 'profile') setScreen('profile')
 
   const handleSignIn = async () => {
     setError('')
-    if (!email.trim() || !password)  { setError('Enter email and password'); return }
+    if (isLocked()) { setError(`Too many attempts. Try again in ${lockSecondsLeft()}s`); return }
+    if (!email.trim() || !password) { setError('Enter email and password'); return }
     setLoading(true)
     try {
       await signIn(email.trim(), password)
-      // auth state listener handles the rest
+      clearAttempts()
     } catch (e) {
-      setError(e.message || 'Sign in failed')
+      const attempts = recordFailedAttempt()
+      if (attempts >= 5) setError('Too many failed attempts. Locked for 15 minutes.')
+      else setError(`Incorrect email or password (${5 - attempts} attempts left)`)
     } finally {
       setLoading(false)
     }
