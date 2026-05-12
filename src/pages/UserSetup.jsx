@@ -9,7 +9,9 @@ export default function UserSetup() {
           sendPasswordReset, updatePassword, isPasswordRecovery } = useUser()
 
   const [screen,   setScreen]   = useState(
-    isPasswordRecovery ? 'new-password' : needsProfile ? 'profile' : 'signin'
+    (isPasswordRecovery || window.location.hash.includes('type=recovery'))
+      ? 'new-password'
+      : needsProfile ? 'profile' : 'signin'
   )
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')

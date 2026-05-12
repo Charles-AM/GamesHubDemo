@@ -127,6 +127,7 @@ export function UserProvider({ children }) {
 
     // Detect implicit-flow recovery link (#type=recovery in hash)
     const isRecoveryLink = window.location.hash.includes('type=recovery')
+    console.log('[Auth] isRecoveryLink:', isRecoveryLink, '| hash:', window.location.hash.slice(0, 60))
 
     if (isRecoveryLink) {
       // Recovery link: let onAuthStateChange handle everything — don't call getSession
@@ -149,6 +150,8 @@ export function UserProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
+
+        console.log('[Auth] onAuthStateChange:', event, '| user:', !!session?.user, '| isRecoveryLink:', isRecoveryLink)
 
         // INITIAL_SESSION on a recovery link — treat it as PASSWORD_RECOVERY
         if (event === 'INITIAL_SESSION' && isRecoveryLink) {
