@@ -122,8 +122,9 @@ export function UserProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
-    // Fast path: read session directly from localStorage — no network wait
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Fast path: read session — bail out after 4s if Supabase is cold/paused
+    const timeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
+    Promise.race([supabase.auth.getSession(), timeout]).then(async ({ data: { session } }) => {
       if (!mounted) return
       const u = session?.user || null
       setAuthUser(u)
