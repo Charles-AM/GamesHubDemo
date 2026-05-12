@@ -123,9 +123,12 @@ export function UserProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
-          // User clicked the reset link — show the new-password screen
+          // User clicked the reset link — authenticated but needs to set new password
+          const u = session?.user || null
+          setAuthUser(u)
           setIsPasswordRecovery(true)
-          setLoading(false)
+          if (u) await loadUserData(u.id)
+          else setLoading(false)
           return
         }
         const u = session?.user || null

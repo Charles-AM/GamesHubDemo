@@ -32,12 +32,12 @@ function Layout() {
 }
 
 function AppRoutes() {
-  const { user, loading, needsProfile } = useUser()
+  const { user, loading, needsProfile, isPasswordRecovery } = useUser()
 
   if (loading) return <LoadingScreen />
 
-  // Authenticated but no profile yet → finish setup
-  const setupNeeded = !user || needsProfile
+  // Authenticated but no profile yet, or mid password-recovery → finish setup
+  const setupNeeded = !user || needsProfile || isPasswordRecovery
 
   return (
     <Routes>

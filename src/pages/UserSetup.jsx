@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser, AVATARS } from '../context/UserContext'
 
@@ -33,9 +33,11 @@ export default function UserSetup() {
   }
   const clearAttempts = () => sessionStorage.removeItem(LIMIT_KEY)
 
-  // Keep screen in sync when context flags change
-  if (isPasswordRecovery && screen !== 'new-password') setScreen('new-password')
-  else if (!isPasswordRecovery && needsProfile && screen !== 'profile') setScreen('profile')
+  // Keep screen in sync when context flags change (must be in useEffect, not render)
+  useEffect(() => {
+    if (isPasswordRecovery) setScreen('new-password')
+    else if (needsProfile) setScreen('profile')
+  }, [isPasswordRecovery, needsProfile])
 
   const handleSignIn = async () => {
     setError('')
@@ -89,7 +91,7 @@ export default function UserSetup() {
     setLoading(true)
     try {
       await updatePassword(newPass)
-      setScreen('signin')
+      // isPasswordRecovery flips false → useEffect clears screen → App routes to /hub
     } catch (e) {
       setError(e.message || 'Could not update password')
     } finally {
