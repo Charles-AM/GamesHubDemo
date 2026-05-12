@@ -118,24 +118,30 @@ export function UserProvider({ children }) {
     setLoading(false)
   }, [])
 
-  // ── Safety net: if Supabase never fires, stop loading after 6s ──
-  useEffect(() => {
-    console.log('[Auth] UserProvider mounted')
-    const t = setTimeout(() => {
-      console.log('[Auth] 6s timeout fired — forcing loading=false')
-      setLoading(false)
-    }, 6000)
-    return () => clearTimeout(t)
-  }, [])
-
   // ── Auth state listener ─────────────────────────────────
   useEffect(() => {
-    console.log('[Auth] Registering onAuthStateChange listener')
+    let mounted = true
+
+    // Fast path: read session directly from localStorage — no network wait
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return
+      const u = session?.user || null
+      setAuthUser(u)
+      setIsPasswordRecovery(false)
+      if (u) await loadUserData(u.id)
+      else {
+        setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
+        setNeedsProfile(false); setLoading(false)
+      }
+    })
+
+    // Listen for subsequent auth changes (sign in, sign out, password recovery)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('[Auth] onAuthStateChange fired:', event, !!session?.user)
+        if (!mounted) return
+        if (event === 'INITIAL_SESSION') return // already handled by getSession() above
+
         if (event === 'PASSWORD_RECOVERY') {
-          // User clicked the reset link — authenticated but needs to set new password
           const u = session?.user || null
           setAuthUser(u)
           setIsPasswordRecovery(true)
@@ -154,7 +160,7 @@ export function UserProvider({ children }) {
         }
       }
     )
-    return () => subscription.unsubscribe()
+    return () => { mounted = false; subscription.unsubscribe() }
   }, [loadUserData])
 
   // ── Auth actions ────────────────────────────────────────
