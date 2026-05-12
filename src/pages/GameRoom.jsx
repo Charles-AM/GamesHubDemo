@@ -116,6 +116,7 @@ export default function GameRoom() {
         .update({ guest_id: user.id, guest_username: user.username, guest_avatar: user.avatar })
         .eq('id', found.id).select().maybeSingle()
       if (joinErr) throw joinErr
+      if (!data) throw new Error('Could not join room — permission denied. Try again.')
       setRoom(data); setIsHost(false); setScreen('lobby')
       subscribeToRoom(data.id)
     } catch (e) { setError(e.message || 'Failed to join room') }
