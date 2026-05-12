@@ -12,6 +12,7 @@
   "dependencies": {
     "@fontsource/orbitron": "^5.2.8",
     "@fontsource/rajdhani": "^5.2.7",
+    "@supabase/supabase-js": "^2.105.4",
     "@tailwindcss/vite": "^4.3.0",
     "firebase": "^12.13.0",
     "framer-motion": "^12.38.0",

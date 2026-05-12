@@ -18,7 +18,7 @@ function timeAgo(ts) {
 }
 
 export default function Hub() {
-  const { user, scores, matchHistory, logout } = useUser()
+  const { user, scores, matchHistory, signOut: logout } = useUser()
   const navigate = useNavigate()
   const [expandGame, setExpandGame] = useState(null)
 

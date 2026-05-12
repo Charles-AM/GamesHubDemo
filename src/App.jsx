@@ -9,6 +9,15 @@ import BottomNav   from './components/BottomNav'
 
 const NAV_ROUTES = ['/hub', '/profile', '/leaderboard']
 
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="text-4xl animate-pulse">🕹️</div>
+      <p className="font-orbitron text-xs text-gray-500 tracking-widest animate-pulse">LOADING...</p>
+    </div>
+  )
+}
+
 function Layout() {
   const location = useLocation()
   const showNav  = NAV_ROUTES.includes(location.pathname)
@@ -23,14 +32,20 @@ function Layout() {
 }
 
 function AppRoutes() {
-  const { user } = useUser()
+  const { user, loading, needsProfile } = useUser()
+
+  if (loading) return <LoadingScreen />
+
+  // Authenticated but no profile yet → finish setup
+  const setupNeeded = !user || needsProfile
+
   return (
     <Routes>
-      <Route path="/"             element={user ? <Navigate to="/hub" /> : <UserSetup />} />
-      <Route path="/hub"          element={user ? <Hub />         : <Navigate to="/" />} />
-      <Route path="/profile"      element={user ? <Profile />     : <Navigate to="/" />} />
-      <Route path="/leaderboard"  element={user ? <Leaderboard /> : <Navigate to="/" />} />
-      <Route path="/game/:gameId/:mode" element={user ? <GamePage /> : <Navigate to="/" />} />
+      <Route path="/"            element={setupNeeded ? <UserSetup /> : <Navigate to="/hub" />} />
+      <Route path="/hub"         element={setupNeeded ? <Navigate to="/" /> : <Hub />} />
+      <Route path="/profile"     element={setupNeeded ? <Navigate to="/" /> : <Profile />} />
+      <Route path="/leaderboard" element={setupNeeded ? <Navigate to="/" /> : <Leaderboard />} />
+      <Route path="/game/:gameId/:mode" element={setupNeeded ? <Navigate to="/" /> : <GamePage />} />
     </Routes>
   )
 }
