@@ -95,7 +95,7 @@ export default function GameRoom() {
       const { data, error: err } = await supabase.from('rooms').insert({
         code: genCode(), game: selectedGame, status: 'waiting',
         host_id: user.id, host_username: user.username, host_avatar: user.avatar,
-      }).select().single()
+      }).select().maybeSingle()
       if (err) throw err
       setRoom(data); setIsHost(true); setScreen('lobby')
       subscribeToRoom(data.id)
@@ -114,7 +114,7 @@ export default function GameRoom() {
       if (found.host_id === user.id) { setError("You can't join your own room"); return }
       const { data, error: joinErr } = await supabase.from('rooms')
         .update({ guest_id: user.id, guest_username: user.username, guest_avatar: user.avatar })
-        .eq('id', found.id).select().single()
+        .eq('id', found.id).select().maybeSingle()
       if (joinErr) throw joinErr
       setRoom(data); setIsHost(false); setScreen('lobby')
       subscribeToRoom(data.id)
