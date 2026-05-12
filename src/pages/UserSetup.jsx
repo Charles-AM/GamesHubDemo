@@ -45,12 +45,19 @@ export default function UserSetup() {
     if (!email.trim() || !password) { setError('Enter email and password'); return }
     setLoading(true)
     try {
-      await signIn(email.trim(), password)
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Request timed out — check your connection')), 10000))
+      await Promise.race([signIn(email.trim(), password), timeout])
       clearAttempts()
     } catch (e) {
-      const attempts = recordFailedAttempt()
-      if (attempts >= 5) setError('Too many failed attempts. Locked for 15 minutes.')
-      else setError(`Incorrect email or password (${5 - attempts} attempts left)`)
+      if (e.message?.includes('timed out')) {
+        setError('Connection timed out — please try again')
+      } else if (e.message?.includes('Email not confirmed')) {
+        setError('Please confirm your email first — check your inbox')
+      } else {
+        const attempts = recordFailedAttempt()
+        if (attempts >= 5) setError('Too many failed attempts. Locked for 15 minutes.')
+        else setError(`Incorrect email or password (${5 - attempts} attempts left)`)
+      }
     } finally {
       setLoading(false)
     }
