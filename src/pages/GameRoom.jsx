@@ -15,21 +15,26 @@ export default function GameRoom() {
   const navigate = useNavigate()
 
   const [screen,       setScreen]       = useState('menu')
-  const [room,         setRoom]         = useState(null)
-  const [isHost,       setIsHost]       = useState(false)
-  const [joinCode,     setJoinCode]     = useState('')
-  const [selectedGame, setSelectedGame] = useState('trivia')
-  const [error,        setError]        = useState('')
-  const [loading,      setLoading]      = useState(false)
-  const [countdown,    setCountdown]    = useState(3)
-  const [myScore,      setMyScore]      = useState(null)
-  const [rewardInfo,   setRewardInfo]   = useState(null)
-  const [scoreSent,    setScoreSent]    = useState(false)
-  const [copied,       setCopied]       = useState(false)
+  const [room,           setRoom]           = useState(null)
+  const [isHost,         setIsHost]         = useState(false)
+  const [joinCode,       setJoinCode]       = useState('')
+  const [selectedGame,   setSelectedGame]   = useState('trivia')
+  const [error,          setError]          = useState('')
+  const [loading,        setLoading]        = useState(false)
+  const [countdown,      setCountdown]      = useState(3)
+  const [myScore,        setMyScore]        = useState(null)
+  const [rewardInfo,     setRewardInfo]     = useState(null)
+  const [scoreSent,      setScoreSent]      = useState(false)
+  const [copied,         setCopied]         = useState(false)
+  const [rounds,         setRounds]         = useState([])
+  const [seriesScore,    setSeriesScore]    = useState({ me: 0, opp: 0, draws: 0 })
+  const [showNextPicker, setShowNextPicker] = useState(false)
+  const [nextGameChoice, setNextGameChoice] = useState('trivia')
 
-  const channelRef  = useRef(null)
-  const rewardRef   = useRef(false)
-  const screenRef   = useRef('menu')
+  const channelRef    = useRef(null)
+  const rewardRef     = useRef(false)
+  const roundSavedRef = useRef(false)
+  const screenRef     = useRef('menu')
 
   useEffect(() => { screenRef.current = screen }, [screen])
 
@@ -49,6 +54,18 @@ export default function GameRoom() {
   // React to room state changes from Realtime
   useEffect(() => {
     if (!room) return
+
+    // New round: host reset the room back to lobby
+    if (room.status === 'lobby' && (screenRef.current === 'results' || screenRef.current === 'waiting')) {
+      roundSavedRef.current = false
+      rewardRef.current     = false
+      setScoreSent(false)
+      setMyScore(null)
+      setRewardInfo(null)
+      setShowNextPicker(false)
+      setScreen('lobby')
+      return
+    }
 
     if (room.status === 'playing' && screenRef.current === 'lobby') {
       setScreen('countdown')
@@ -72,7 +89,7 @@ export default function GameRoom() {
     }
   }, [room])
 
-  // Award XP exactly once when results load
+  // Award XP + save round to series exactly once when results load
   useEffect(() => {
     if (screen !== 'results' || !room || rewardRef.current) return
     const mySc  = isHost ? room.host_score  : room.guest_score
@@ -80,6 +97,18 @@ export default function GameRoom() {
     if (mySc === null || oppSc === null) return
     rewardRef.current = true
     const won = mySc > oppSc ? true : mySc < oppSc ? false : null
+
+    // Save this round to the series tracker
+    if (!roundSavedRef.current) {
+      roundSavedRef.current = true
+      setRounds(prev => [...prev, { game: room.game, myScore: mySc, oppScore: oppSc, won }])
+      setSeriesScore(prev => ({
+        me:    prev.me    + (won === true  ? 1 : 0),
+        opp:   prev.opp   + (won === false ? 1 : 0),
+        draws: prev.draws + (won === null  ? 1 : 0),
+      }))
+    }
+
     recordGame({
       game: room.game, score: mySc,
       mode: 'versus', won,
@@ -142,10 +171,25 @@ export default function GameRoom() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const nextRound = async () => {
+    setLoading(true)
+    await supabase.from('rooms').update({
+      game: nextGameChoice,
+      status: 'lobby',
+      host_score: null,
+      guest_score: null,
+    }).eq('id', room.id)
+    setLoading(false)
+    // Realtime fires → both clients see lobby status → reset and go to lobby
+  }
+
   const playAgain = () => {
     setRoom(null); setIsHost(false); setMyScore(null)
     setRewardInfo(null); setScoreSent(false); rewardRef.current = false
-    setCopied(false); setScreen('create')
+    roundSavedRef.current = false; setCopied(false)
+    setRounds([]); setSeriesScore({ me: 0, opp: 0, draws: 0 })
+    setShowNextPicker(false)
+    setScreen('create')
   }
 
   const goHome = () => { channelRef.current?.unsubscribe(); navigate('/hub') }
@@ -291,6 +335,26 @@ export default function GameRoom() {
         {screen === 'lobby' && room && (
           <motion.div key="lobby" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }} className="relative z-10 px-4 pt-2">
+
+            {/* Series score banner (multi-round) */}
+            {rounds.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between px-5 py-3 rounded-2xl mb-4"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="text-center">
+                  <p className="font-orbitron text-[8px] text-gray-600 tracking-widest">{isHost ? 'YOU' : room.host_username?.toUpperCase()}</p>
+                  <p className="font-orbitron text-3xl font-black" style={{ color: '#00f5ff' }}>{isHost ? seriesScore.me : seriesScore.opp}</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-orbitron text-[8px] text-gray-600 tracking-widest">ROUND {rounds.length + 1}</p>
+                  {seriesScore.draws > 0 && <p className="font-rajdhani text-[10px] text-gray-600">{seriesScore.draws} draw{seriesScore.draws > 1 ? 's' : ''}</p>}
+                </div>
+                <div className="text-center">
+                  <p className="font-orbitron text-[8px] text-gray-600 tracking-widest">{isHost ? room.guest_username?.toUpperCase() : 'YOU'}</p>
+                  <p className="font-orbitron text-3xl font-black" style={{ color: '#bf00ff' }}>{isHost ? seriesScore.opp : seriesScore.me}</p>
+                </div>
+              </motion.div>
+            )}
 
             {/* Code */}
             <div className="text-center mb-6">
@@ -627,19 +691,89 @@ export default function GameRoom() {
                 </motion.div>
               )}
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <motion.button whileTap={{ scale: 0.96 }} onClick={playAgain}
-                  className="flex-1 py-3.5 rounded-2xl font-orbitron text-xs font-bold tracking-wider"
-                  style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid #00f5ff', color: '#00f5ff' }}>
-                  🔄 REMATCH
-                </motion.button>
-                <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
-                  className="flex-1 py-3.5 rounded-2xl font-orbitron text-xs font-bold tracking-wider"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.15)', color: '#666' }}>
-                  🏠 HUB
-                </motion.button>
-              </div>
+              {/* Series score */}
+              {rounds.length > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                  className="rounded-2xl px-5 py-3 mb-4 flex items-center justify-between"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="text-center">
+                    <p className="font-orbitron text-[8px] text-gray-600 mb-1">YOU</p>
+                    <p className="font-orbitron text-3xl font-black" style={{ color: seriesScore.me > seriesScore.opp ? '#00ff88' : seriesScore.me < seriesScore.opp ? '#ff006e' : '#ffd700' }}>{seriesScore.me}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-orbitron text-[8px] text-gray-600 tracking-widest">SERIES</p>
+                    <p className="font-orbitron text-xs text-gray-700 mt-1">{rounds.length} game{rounds.length > 1 ? 's' : ''}{seriesScore.draws > 0 ? ` · ${seriesScore.draws}D` : ''}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-orbitron text-[8px] text-gray-600 mb-1">{oppName?.toUpperCase()}</p>
+                    <p className="font-orbitron text-3xl font-black" style={{ color: seriesScore.opp > seriesScore.me ? '#00ff88' : seriesScore.opp < seriesScore.me ? '#ff006e' : '#ffd700' }}>{seriesScore.opp}</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Actions — host picks next game, guest waits */}
+              {isHost ? (
+                showNextPicker ? (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <p className="font-orbitron text-[9px] text-gray-600 tracking-widest text-center mb-3">PICK NEXT GAME</p>
+                    <div className="flex flex-col gap-2 mb-3">
+                      {GAME_LIST.map(gm => (
+                        <button key={gm.id} onClick={() => setNextGameChoice(gm.id)}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left"
+                          style={{
+                            background:  nextGameChoice === gm.id ? `${gm.color}14` : 'rgba(255,255,255,0.03)',
+                            border:     `1px solid ${nextGameChoice === gm.id ? gm.border : 'rgba(255,255,255,0.08)'}`,
+                          }}>
+                          <span className="text-lg">{gm.icon}</span>
+                          <span className="font-orbitron text-xs" style={{ color: nextGameChoice === gm.id ? gm.color : '#666' }}>{gm.label}</span>
+                          {nextGameChoice === gm.id && <span className="ml-auto font-bold text-xs" style={{ color: gm.color }}>✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-3">
+                      <motion.button whileTap={{ scale: 0.96 }} onClick={nextRound} disabled={loading}
+                        className="flex-1 py-3.5 rounded-2xl font-orbitron text-xs font-bold tracking-wider"
+                        style={{ background: 'rgba(0,255,136,0.08)', border: '1px solid #00ff88', color: loading ? '#555' : '#00ff88' }}>
+                        {loading ? 'STARTING...' : '⚡ START ROUND'}
+                      </motion.button>
+                      <motion.button whileTap={{ scale: 0.96 }} onClick={() => setShowNextPicker(false)}
+                        className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#555' }}>
+                        ✕
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="flex gap-3">
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={() => setShowNextPicker(true)}
+                      className="flex-1 py-3.5 rounded-2xl font-orbitron text-xs font-bold tracking-wider"
+                      style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid #00f5ff', color: '#00f5ff' }}>
+                      ➕ NEXT GAME
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={playAgain}
+                      className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#555' }}>
+                      🔄
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
+                      className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#555' }}>
+                      🏠
+                    </motion.button>
+                  </div>
+                )
+              ) : (
+                <div className="flex gap-3">
+                  <div className="flex-1 text-center py-3">
+                    <p className="font-rajdhani text-xs text-gray-600">Waiting for host to start next game...</p>
+                  </div>
+                  <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
+                    className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#555' }}>
+                    🏠
+                  </motion.button>
+                </div>
+              )}
             </motion.div>
           )
         })()}

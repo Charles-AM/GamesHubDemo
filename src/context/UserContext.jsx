@@ -260,7 +260,7 @@ export function UserProvider({ children }) {
 
     // XP
     let xpEarned = 10 + Math.floor(score / 20)
-    if (mode === 'versus') xpEarned += won ? 60 : 20
+    if (mode === 'versus') xpEarned += won === true ? 60 : won === false ? 20 : 40 // win/loss/draw
     if (isDaily) xpEarned = Math.floor(xpEarned * 2)
 
     // Scores (optimistic)

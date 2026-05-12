@@ -6,6 +6,7 @@ import { GAME_LIST } from '../games/gameRegistry'
 
 const TABS = [
   { id: 'overall',    label: 'OVERALL',    icon: '🏅' },
+  { id: 'vs',         label: 'BATTLE',     icon: '⚔️' },
   { id: 'trivia',     label: 'TRIVIA',     icon: '🧠' },
   { id: 'wordle',     label: 'WORDLE',     icon: '🔤' },
   { id: 'crossword',  label: 'CROSSWORD',  icon: '✏️' },
@@ -42,6 +43,10 @@ export default function Leaderboard() {
           score = scoreRows.reduce((a, s) => a + (s.best || 0), 0)
           plays = scoreRows.reduce((a, s) => a + (s.plays || 0), 0)
           wins  = scoreRows.reduce((a, s) => a + (s.wins  || 0), 0)
+        } else if (activeTab === 'vs') {
+          wins  = scoreRows.reduce((a, s) => a + (s.wins  || 0), 0)
+          plays = scoreRows.reduce((a, s) => a + (s.plays || 0), 0)
+          score = wins // rank by total VS wins
         } else {
           const row = scoreRows.find(s => s.game === activeTab)
           score = row?.best  || 0
@@ -178,10 +183,14 @@ export default function Leaderboard() {
                     {/* Score */}
                     <div className="text-right flex-shrink-0">
                       <p className="font-orbitron text-lg font-black" style={{ color: rankColor }}>
-                        {row.score.toLocaleString()}
+                        {activeTab === 'vs'
+                          ? `${row.wins}W`
+                          : row.score.toLocaleString()}
                       </p>
                       <p className="font-rajdhani text-[9px] text-gray-600">
-                        {activeTab === 'overall' ? 'TOTAL' : 'BEST'}
+                        {activeTab === 'vs'
+                          ? row.plays > 0 ? `${Math.round((row.wins / row.plays) * 100)}% WIN` : '—'
+                          : activeTab === 'overall' ? 'TOTAL' : 'BEST'}
                       </p>
                     </div>
                   </motion.div>
