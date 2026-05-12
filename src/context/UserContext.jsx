@@ -152,8 +152,14 @@ export function UserProvider({ children }) {
   }, [])
 
   const createProfile = useCallback(async (username, avatar = '🎮') => {
-    const uid = authUserRef.current?.id
-    if (!uid) throw new Error('Not authenticated')
+    // authUserRef may not be set yet if the auth state listener hasn't fired —
+    // fall back to asking Supabase directly for the current session
+    let uid = authUserRef.current?.id
+    if (!uid) {
+      const { data } = await supabase.auth.getUser()
+      uid = data?.user?.id
+    }
+    if (!uid) throw new Error('Not authenticated — please sign in again')
     const { data, error } = await supabase.from('profiles').insert({
       id: uid, username, avatar,
       xp: 0, streak_count: 0, streak_last_date: null,
@@ -171,7 +177,11 @@ export function UserProvider({ children }) {
     p2Name = null, p2Score = null,
     isDaily = false, wordle_tries = null,
   }) => {
-    const uid  = authUserRef.current?.id
+    let uid = authUserRef.current?.id
+    if (!uid) {
+      const { data } = await supabase.auth.getUser()
+      uid = data?.user?.id
+    }
     const prof = profileRef.current
     if (!uid || !prof) return {}
 

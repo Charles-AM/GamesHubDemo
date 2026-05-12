@@ -35,12 +35,14 @@ export default function UserSetup() {
 
   const handleSignUp = async () => {
     setError('')
-    if (!email.trim())    { setError('Enter your email'); return }
+    if (!email.trim())       { setError('Enter your email'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
     setLoading(true)
     try {
       await signUp(email.trim(), password)
-      setScreen('profile') // next: pick username + avatar
+      // Sign in immediately so the session is ready before profile setup
+      await signIn(email.trim(), password)
+      setScreen('profile')
     } catch (e) {
       setError(e.message || 'Sign up failed')
     } finally {
