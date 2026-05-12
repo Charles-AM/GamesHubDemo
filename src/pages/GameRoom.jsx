@@ -109,7 +109,7 @@ export default function GameRoom() {
     setLoading(true); setError('')
     try {
       const { data: found, error: findErr } = await supabase
-        .from('rooms').select('*').eq('code', code).eq('status', 'waiting').single()
+        .from('rooms').select('*').eq('code', code).eq('status', 'waiting').maybeSingle()
       if (findErr || !found) { setError('Room not found or already started'); return }
       if (found.host_id === user.id) { setError("You can't join your own room"); return }
       const { data, error: joinErr } = await supabase.from('rooms')
