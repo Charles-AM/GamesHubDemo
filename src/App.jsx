@@ -5,9 +5,10 @@ import Hub         from './pages/Hub'
 import Profile     from './pages/Profile'
 import Leaderboard from './pages/Leaderboard'
 import GamePage    from './pages/GamePage'
+import GameRoom    from './pages/GameRoom'
 import BottomNav   from './components/BottomNav'
 
-const NAV_ROUTES = ['/hub', '/profile', '/leaderboard']
+const NAV_ROUTES = ['/hub', '/profile', '/leaderboard', '/room']
 
 function LoadingScreen() {
   return (
@@ -46,6 +47,7 @@ function AppRoutes() {
       <Route path="/profile"     element={setupNeeded ? <Navigate to="/" /> : <Profile />} />
       <Route path="/leaderboard" element={setupNeeded ? <Navigate to="/" /> : <Leaderboard />} />
       <Route path="/game/:gameId/:mode" element={setupNeeded ? <Navigate to="/" /> : <GamePage />} />
+      <Route path="/room"              element={setupNeeded ? <Navigate to="/" /> : <GameRoom />} />
     </Routes>
   )
 }
