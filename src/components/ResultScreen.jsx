@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
 
 const C = {
-  cyan:   { border: 'neon-border-cyan',   text: 'neon-text-cyan'   },
-  green:  { border: 'neon-border-green',  text: 'neon-text-green'  },
-  gold:   { border: 'neon-border-gold',   text: 'neon-text-gold'   },
-  pink:   { border: 'neon-border-pink',   text: 'neon-text-pink'   },
-  purple: { border: 'neon-border-purple', text: 'neon-text-purple' },
+  cyan:   { neon: 'neon-text-cyan',   border: '1px solid rgba(0,245,255,0.4)',   color: '#00f5ff' },
+  green:  { neon: 'neon-text-green',  border: '1px solid rgba(0,255,136,0.4)',   color: '#00ff88' },
+  gold:   { neon: 'neon-text-gold',   border: '1px solid rgba(255,215,0,0.4)',   color: '#ffd700' },
+  pink:   { neon: 'neon-text-pink',   border: '1px solid rgba(255,0,110,0.4)',   color: '#ff006e' },
+  purple: { neon: 'neon-text-purple', border: '1px solid rgba(191,0,255,0.4)',   color: '#bf00ff' },
 }
 
 const OUTCOMES = {
@@ -14,84 +14,74 @@ const OUTCOMES = {
   draw: { label: 'DRAW',     cls: 'neon-text-gold'  },
 }
 
-export default function ResultScreen({ game, score, stats = [], outcome, onPlayAgain, onRematch, onHub, color = 'cyan' }) {
-  const c = C[color]
+export default function ResultScreen({
+  game, score, stats = [], outcome, shareText,
+  onPlayAgain, onHub,
+  color = 'cyan',
+}) {
+  const c = C[color] || C.cyan
   const o = outcome ? OUTCOMES[outcome] : null
 
+  const handleShare = () => {
+    const txt = shareText || `I scored ${score} in ${game} on ArcadiaDuels! 🎮 Can you beat it?`
+    navigator.clipboard?.writeText(txt).catch(() => {})
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-sm"
-      >
-        <p className="font-orbitron text-xs text-gray-500 tracking-widest text-center mb-4">{game}</p>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-8">
+      <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.45 }} className="w-full max-w-sm">
+
+        <p className="font-orbitron text-[10px] text-gray-500 tracking-widest text-center mb-3">{game}</p>
 
         {o && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className={`font-orbitron text-4xl font-black text-center mb-4 ${o.cls}`}
-          >
+          <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className={`font-orbitron text-4xl font-black text-center mb-4 ${o.cls}`}>
             {o.label}
           </motion.p>
         )}
 
         {/* Score */}
-        <div className={`glass-card ${c.border} rounded-2xl p-6 text-center mb-4`}>
-          <p className="font-rajdhani text-gray-500 text-sm tracking-widest mb-1">FINAL SCORE</p>
-          <motion.p
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring' }}
-            className={`font-orbitron text-5xl font-black ${c.text}`}
-          >
+        <div className="glass-card rounded-2xl p-6 text-center mb-4" style={{ border: c.border }}>
+          <p className="font-rajdhani text-gray-500 text-xs tracking-widest mb-1">FINAL SCORE</p>
+          <motion.p initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25, type: 'spring' }}
+            className={`font-orbitron text-5xl font-black ${c.neon}`}>
             {score}
           </motion.p>
         </div>
 
         {/* Stats */}
         {stats.length > 0 && (
-          <div className="glass-card rounded-2xl p-4 mb-6 flex justify-around border border-gray-800">
+          <div className="glass-card rounded-2xl p-4 mb-4 flex justify-around border border-gray-800">
             {stats.map((s, i) => (
               <div key={i} className="text-center">
                 <p className="font-orbitron text-[10px] text-gray-600 tracking-wider">{s.label}</p>
-                <p className={`font-orbitron text-lg font-bold ${c.text}`}>{s.value}</p>
+                <p className={`font-orbitron text-lg font-bold ${c.neon}`}>{s.value}</p>
               </div>
             ))}
           </div>
         )}
 
+        {/* Share */}
+        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+          whileTap={{ scale: 0.95 }} onClick={handleShare}
+          className="w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest mb-4 transition-all"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#666' }}>
+          📋 COPY SCORE TO SHARE
+        </motion.button>
+
         {/* Buttons */}
         <div className="flex flex-col gap-3">
-          {onRematch && (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.02 }}
-              onClick={onRematch}
-              className={`w-full py-3 rounded-xl font-orbitron text-sm tracking-widest
-                         ${c.border} ${c.text} bg-white/5 hover:bg-white/10 transition-all`}
-            >
-              REMATCH
-            </motion.button>
-          )}
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={onPlayAgain}
-            className={`w-full py-3 rounded-xl font-orbitron text-sm tracking-widest
-                       ${onRematch ? 'border border-gray-700 text-gray-400 hover:text-white' : `${c.border} ${c.text} bg-white/5 hover:bg-white/10`}
-                       transition-all`}
-          >
+          <motion.button whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }} onClick={onPlayAgain}
+            className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest transition-all"
+            style={{ background: `${c.color}12`, border: c.border, color: c.color }}>
             PLAY AGAIN
           </motion.button>
-          <button
-            onClick={onHub}
+          <button onClick={onHub}
             className="w-full py-3 rounded-xl font-orbitron text-xs tracking-widest
-                       border border-gray-800 text-gray-600 hover:text-gray-400 transition-all"
-          >
+                       border border-gray-800 text-gray-600 hover:text-gray-400 transition-all">
             BACK TO HUB
           </button>
         </div>
