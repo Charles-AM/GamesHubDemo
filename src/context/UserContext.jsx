@@ -122,10 +122,13 @@ export function UserProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
+    // If this is a password recovery link, skip getSession — let onAuthStateChange handle it
+    const isRecoveryUrl = window.location.hash.includes('type=recovery')
+
     // Fast path: read session — bail out after 4s if Supabase is cold/paused
     const timeout = new Promise(res => setTimeout(() => res({ data: { session: null } }), 4000))
     Promise.race([supabase.auth.getSession(), timeout]).then(async ({ data: { session } }) => {
-      if (!mounted) return
+      if (!mounted || isRecoveryUrl) return
       const u = session?.user || null
       setAuthUser(u)
       setIsPasswordRecovery(false)
