@@ -221,7 +221,7 @@ export default function WordSearchGame({ onFinish }) {
     <div className="min-h-screen flex flex-col px-3 pt-5 pb-4 select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs text-gray-600 hover:text-gray-400">← HUB</button>
+        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs tracking-widest px-3 py-1 rounded-lg transition-all" style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#555' }}>← QUIT</button>
         <span className="font-orbitron text-xs neon-text-pink tracking-widest">WORD SEARCH</span>
         <span className="font-orbitron text-xs" style={{ color: timerColor }}>{timeLeft}s</span>
       </div>

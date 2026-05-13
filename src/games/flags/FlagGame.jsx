@@ -137,7 +137,7 @@ export default function FlagGame({ onFinish }) {
     <div className="page px-4 pt-4 pb-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs text-gray-600 hover:text-gray-400">← HUB</button>
+        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs tracking-widest px-3 py-1 rounded-lg transition-all" style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#555' }}>← QUIT</button>
         <span className="font-orbitron text-xs neon-text-purple tracking-widest">FLAG FRENZY</span>
         <span className="font-orbitron text-xs text-gray-500">{current + 1}/{ROUNDS}</span>
       </div>

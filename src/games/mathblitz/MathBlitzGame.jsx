@@ -122,10 +122,7 @@ export default function MathBlitzGame({ onFinish }) {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-4 relative z-10">
-        <button onClick={() => navigate('/hub')}
-          className="font-orbitron text-xs text-gray-600 hover:text-gray-400 transition-colors">
-          ← HUB
-        </button>
+        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs tracking-widest px-3 py-1 rounded-lg transition-all" style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#555' }}>← QUIT</button>
         <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
         <span className="font-orbitron text-[10px] text-gray-500 tracking-widest">⚡ MATH BLITZ</span>
       </div>

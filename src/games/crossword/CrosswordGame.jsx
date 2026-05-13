@@ -222,7 +222,7 @@ export default function CrosswordGame({ onFinish }) {
     <div className="min-h-screen flex flex-col px-4 pt-5 pb-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs text-gray-600 hover:text-gray-400">← HUB</button>
+        <button onClick={() => navigate('/hub')} className="font-orbitron text-xs tracking-widest px-3 py-1 rounded-lg transition-all" style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#555' }}>← QUIT</button>
         <div className="text-center">
           <span className="font-orbitron text-xs neon-text-gold tracking-widest">CROSSWORD</span>
           <p className="font-rajdhani text-[10px] text-gray-500">{puzzle.theme}</p>
