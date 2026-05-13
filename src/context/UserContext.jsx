@@ -118,7 +118,7 @@ export function UserProvider({ children }) {
         setAuthUser(u)
         if (u) await loadUserData(u.id)
         else {
-          setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
+          setProfile(null); setScores({}); setMatchHistory([])
           setNeedsProfile(false); setLoading(false)
         }
       })
@@ -155,7 +155,7 @@ export function UserProvider({ children }) {
         if (u) {
           loadUserData(u.id) // no await
         } else {
-          setProfile(null); setScores({}); setAchievements([]); setMatchHistory([])
+          setProfile(null); setScores({}); setMatchHistory([])
           setNeedsProfile(false); setLoading(false)
         }
       }
