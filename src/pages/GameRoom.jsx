@@ -97,13 +97,15 @@ export default function GameRoom() {
       return () => clearInterval(t)
     }
 
-    if (room.status === 'finished' && screenRef.current !== 'results') {
+    // Both scores in → go to results immediately (don't wait for a second Realtime round-trip)
+    const bothScoresIn = room.host_score !== null && room.guest_score !== null
+    if ((bothScoresIn || room.status === 'finished') && screenRef.current !== 'results') {
+      // Mark finished in DB (idempotent, needed for the other client if they're slower)
+      if (room.status !== 'finished') {
+        supabase.from('rooms').update({ status: 'finished' }).eq('id', room.id)
+      }
       setScreen('results')
-    }
-
-    // Both scores in — either client marks finished (idempotent)
-    if (room.status === 'playing' && room.host_score !== null && room.guest_score !== null) {
-      supabase.from('rooms').update({ status: 'finished' }).eq('id', room.id)
+      return
     }
   }, [room])
 
