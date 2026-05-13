@@ -3,6 +3,7 @@ import WordleGame     from './wordle/WordleGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
 import CrosswordGame  from './crossword/CrosswordGame'
 import FlagGame       from './flags/FlagGame'
+import SnakeGame      from './snake/SnakeGame'
 
 export const GAME_REGISTRY = {
   mathblitz: {
@@ -49,6 +50,15 @@ export const GAME_REGISTRY = {
     gradient: 'linear-gradient(135deg, rgba(191,0,255,0.2), rgba(80,0,200,0.15))',
     border: 'rgba(191,0,255,0.45)',
     glow: 'rgba(191,0,255,0.18)',
+  },
+  snake: {
+    id: 'snake', component: SnakeGame,
+    label: 'SNAKE', desc: 'Eat food, grow longer, don\'t crash — 60 seconds',
+    icon: '🐍', tag: 'ARCADE',
+    color: '#00ff88',
+    gradient: 'linear-gradient(135deg, rgba(0,255,136,0.18), rgba(0,160,80,0.12))',
+    border: 'rgba(0,255,136,0.45)',
+    glow: 'rgba(0,255,136,0.18)',
   },
 }
 

@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
-const GAME_ICONS = { mathblitz: '⚡', wordle: '🔤', crossword: '✏️', wordsearch: '🔍', flags: '🌍' }
-const GAME_NAMES = { mathblitz: 'MATH BLITZ', wordle: 'WORDLE', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS' }
+const GAME_ICONS = { mathblitz: '⚡', wordle: '🔤', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍' }
+const GAME_NAMES = { mathblitz: 'MATH BLITZ', wordle: 'WORDLE', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS', snake: 'SNAKE' }
 
 function timeAgo(ts) {
   const diff = Date.now() - ts
@@ -191,16 +191,12 @@ export default function Hub() {
 
       {/* ── Game Grid (2-col for first 4, full for 5th) ── */}
       <div className="relative z-10 px-4">
-        {/* Row 1–2: first 4 games in 2-col grid */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {GAME_LIST.slice(0, 4).map((g, i) => (
-            <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={i * 0.06} />
+        {/* 2-col grid for all games */}
+        <div className="grid grid-cols-2 gap-3">
+          {GAME_LIST.map((g, i) => (
+            <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={i * 0.05} />
           ))}
         </div>
-        {/* Row 3: last game full width */}
-        {GAME_LIST[4] && (
-          <GameCardWide game={GAME_LIST[4]} scores={scores[GAME_LIST[4].id]} navigate={navigate} delay={0.24} />
-        )}
       </div>
 
       {/* ── How to Play Modal ── */}
@@ -231,11 +227,12 @@ export default function Hub() {
                 {/* Games */}
                 <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">THE GAMES</p>
                 {[
-                  { icon: '⚡', name: 'MATH BLITZ', desc: 'Solve as many arithmetic equations as you can in 60 seconds. Pick the correct answer from 4 options. Correct answers earn +10 pts, wrong ones cost –3 pts. Speed and accuracy win.' },
-                  { icon: '🔤', name: 'WORDLE DUEL', desc: 'Guess a hidden 5-letter word in up to 6 tries. Green means right letter, right spot. Yellow means right letter, wrong spot. Fewer guesses = higher score.' },
-                  { icon: '✏️', name: 'CROSSWORD', desc: 'Fill in the grid using the clues. Complete words earn points. Finish the whole puzzle for a bonus. Think carefully — you have unlimited time.' },
-                  { icon: '🔍', name: 'WORD SEARCH', desc: 'Find all the hidden words in the grid before time runs out. Words can go in any direction. Tap the first and last letter of each word to select it.' },
-                  { icon: '🌍', name: 'FLAG FRENZY', desc: 'Identify the country from its flag. 10 rounds, 4 choices each. Fast correct answers give bonus points. A great way to test your world knowledge.' },
+                  { icon: '⚡', name: 'MATH BLITZ', desc: 'Solve as many arithmetic equations as you can in 60 seconds. Pick the correct answer from 4 options. +10 for correct, –3 for wrong. Speed and accuracy win.' },
+                  { icon: '🐍', name: 'SNAKE', desc: 'Guide your snake to eat food and grow longer — without hitting walls or your own tail. The snake gets faster as you eat more. You have 60 seconds.' },
+                  { icon: '🔤', name: 'WORDLE DUEL', desc: 'Guess a hidden 5-letter word in up to 6 tries. Green = right letter, right spot. Yellow = right letter, wrong spot. Fewer guesses = higher score.' },
+                  { icon: '✏️', name: 'CROSSWORD', desc: 'Fill in the grid using the clues. Complete words earn points. Finish the whole puzzle for a bonus.' },
+                  { icon: '🔍', name: 'WORD SEARCH', desc: 'Find all the hidden words in the grid before time runs out. Words go in any direction. Tap the first and last letter of each word.' },
+                  { icon: '🌍', name: 'FLAG FRENZY', desc: 'Identify the country from its flag. 10 rounds, 4 choices each. Fast correct answers give bonus points.' },
                 ].map(g => (
                   <div key={g.name} className="flex gap-3 mb-4 pb-4"
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

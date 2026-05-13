@@ -243,15 +243,17 @@ export default function GameRoom() {
         <div className="orb orb-purple" style={{ bottom: '8%', right: '-8%' }} />
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 px-5 pt-6 pb-4 flex items-center gap-3">
-        <button onClick={goHome}
-          className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
-          ← HUB
-        </button>
-        <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
-        <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">⚔ BATTLE ROOM</p>
-      </div>
+      {/* Header — hidden during gameplay to maximise screen space */}
+      {screen !== 'playing' && (
+        <div className="relative z-10 px-5 pt-6 pb-4 flex items-center gap-3">
+          <button onClick={goHome}
+            className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
+            ← HUB
+          </button>
+          <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">⚔ BATTLE ROOM</p>
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
 
@@ -517,89 +519,81 @@ export default function GameRoom() {
         {/* ── PLAYING ── */}
         {screen === 'playing' && GameComp && (
           <div key="playing" className="relative z-10">
-            <div className="px-4 mb-2">
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(0,245,255,0.04)', border: '1px solid rgba(0,245,255,0.15)' }}>
-                <span className="font-orbitron text-[10px]" style={{ color: '#00f5ff' }}>
-                  {user.avatar} {user.username}
-                </span>
-                <span className="font-orbitron text-[9px] text-gray-600">VS</span>
-                <span className="font-orbitron text-[10px] text-gray-400">
-                  {isHost ? room.guest_username : room.host_username}{' '}
-                  {isHost ? room.guest_avatar  : room.host_avatar}
-                </span>
+            {/* Slim VS banner */}
+            <div className="flex items-center justify-between px-4 py-2 mb-1"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <span className="font-orbitron text-[10px] font-bold" style={{ color: '#00f5ff' }}>
+                {user.avatar} {user.username}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#ff006e', boxShadow: '0 0 6px #ff006e' }} />
+                <span className="font-orbitron text-[9px] text-gray-600 tracking-widest">LIVE</span>
               </div>
+              <span className="font-orbitron text-[10px] text-gray-400">
+                {isHost ? room.guest_username : room.host_username}{' '}
+                {isHost ? room.guest_avatar  : room.host_avatar}
+              </span>
             </div>
+
             <GameComp onFinish={handleGameFinish} />
-            {/* Forfeit button during play */}
-            <div className="px-4 mt-2 pb-2">
+
+            {/* Forfeit — dim and small so it's not accidentally tapped */}
+            <div className="px-4 pb-3 pt-1">
               <button onClick={forfeit}
-                className="w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest transition-all"
-                style={{ border: '1px solid rgba(255,0,110,0.2)', color: 'rgba(255,0,110,0.4)' }}>
-                ✕ FORFEIT — GIVE OPPONENT THE WIN
+                className="w-full py-1.5 rounded-lg font-orbitron text-[9px] tracking-widest transition-all"
+                style={{ color: 'rgba(255,0,110,0.3)', letterSpacing: '0.1em' }}>
+                forfeit
               </button>
             </div>
           </div>
         )}
 
         {/* ── WAITING ── */}
-        {screen === 'waiting' && room && (
-          <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="relative z-10 px-4 pt-4">
+        {screen === 'waiting' && room && (() => {
+          const oppName   = isHost ? room.guest_username : room.host_username
+          const oppAvatar = isHost ? room.guest_avatar   : room.host_avatar
+          return (
+            <motion.div key="waiting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              className="relative z-10 px-4 pt-6">
 
-            {/* Your score locked in */}
-            <div className="text-center mb-6">
-              <p className="font-orbitron text-[10px] text-gray-500 tracking-widest mb-2">YOUR SCORE IS IN</p>
-              <motion.p initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 200 }}
-                className="font-orbitron text-7xl font-black"
-                style={{ color: '#00f5ff', textShadow: '0 0 40px rgba(0,245,255,0.5)' }}>
-                {myScore?.toLocaleString()}
-              </motion.p>
-            </div>
-
-            {/* Head-to-head preview */}
-            <div className="rounded-2xl p-4 mb-5"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <p className="font-orbitron text-[9px] text-gray-600 tracking-widest text-center mb-4">HEAD-TO-HEAD</p>
-              <div className="flex items-center gap-3">
-                {/* You */}
-                <div className="flex-1 text-center">
-                  <div className="text-2xl mb-1">{user.avatar}</div>
-                  <p className="font-orbitron text-[10px] text-gray-400 truncate">{user.username}</p>
-                  <p className="font-orbitron text-2xl font-black mt-1" style={{ color: '#00f5ff' }}>
+              {/* Your score — big and locked */}
+              <div className="text-center mb-8">
+                <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 220, damping: 16 }}
+                  className="inline-block px-8 py-5 rounded-3xl mb-3"
+                  style={{ background: 'rgba(0,245,255,0.07)', border: '1px solid rgba(0,245,255,0.3)' }}>
+                  <p className="font-orbitron text-[9px] text-gray-600 tracking-widest mb-1">YOUR SCORE</p>
+                  <p className="font-orbitron text-6xl font-black"
+                    style={{ color: '#00f5ff', textShadow: '0 0 40px rgba(0,245,255,0.5)' }}>
                     {myScore?.toLocaleString()}
                   </p>
-                </div>
-                {/* VS */}
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <span className="font-orbitron text-xs font-black text-gray-700">VS</span>
-                </div>
-                {/* Opponent */}
-                <div className="flex-1 text-center">
-                  <div className="text-2xl mb-1">
-                    {isHost ? room.guest_avatar : room.host_avatar}
-                  </div>
-                  <p className="font-orbitron text-[10px] text-gray-400 truncate">
-                    {isHost ? room.guest_username : room.host_username}
-                  </p>
-                  <div className="flex items-center justify-center gap-1.5 mt-1">
-                    {[0,1,2].map(i => (
-                      <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
-                        style={{ background: '#bf00ff' }}
-                        animate={{ opacity: [0.2, 1, 0.2] }}
-                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }} />
-                    ))}
-                  </div>
+                </motion.div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full"
+                  style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)' }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#00ff88' }} />
+                  <p className="font-orbitron text-[9px]" style={{ color: '#00ff88' }}>LOCKED IN</p>
                 </div>
               </div>
-            </div>
 
-            <p className="font-rajdhani text-xs text-gray-600 text-center tracking-widest">
-              WAITING FOR {(isHost ? room.guest_username : room.host_username)?.toUpperCase()} TO FINISH...
-            </p>
-          </motion.div>
-        )}
+              {/* Opponent waiting card */}
+              <div className="rounded-2xl p-5 text-center"
+                style={{ background: 'rgba(191,0,255,0.06)', border: '1px solid rgba(191,0,255,0.2)' }}>
+                <div className="text-3xl mb-2">{oppAvatar}</div>
+                <p className="font-orbitron text-xs font-bold text-gray-300 mb-3">{oppName}</p>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  {[0,1,2,3].map(i => (
+                    <motion.div key={i}
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: '#bf00ff' }}
+                      animate={{ opacity: [0.15, 1, 0.15], scale: [0.8, 1.2, 0.8] }}
+                      transition={{ duration: 1.0, repeat: Infinity, delay: i * 0.2 }} />
+                  ))}
+                </div>
+                <p className="font-orbitron text-[9px] text-gray-600 tracking-widest">STILL PLAYING...</p>
+              </div>
+            </motion.div>
+          )
+        })()}
 
         {/* ── RESULTS ── */}
         {screen === 'results' && room && (() => {

@@ -11,6 +11,7 @@ const GAME_LABEL = {
   crossword:  '✏️ Crossword',
   wordsearch: '🔍 Word Search',
   flags:      '🌍 Flags',
+  snake:      '🐍 Snake',
 }
 
 function joinDate(ts) {
