@@ -1,10 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const TABS = [
-  { path: '/hub',         icon: '🎮', label: 'HUB'     },
-  { path: '/room',        icon: '⚔️', label: 'BATTLE'   },
-  { path: '/leaderboard', icon: '🏆', label: 'SCORES'   },
-  { path: '/profile',     icon: '👤', label: 'PROFILE'  },
+  { path: '/hub',     icon: '🎮', label: 'HUB'     },
+  { path: '/room',    icon: '⚔️', label: 'BATTLE'   },
+  { path: '/profile', icon: '👤', label: 'PROFILE'  },
 ]
 
 export default function BottomNav() {

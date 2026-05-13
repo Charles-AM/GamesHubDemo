@@ -18,7 +18,7 @@ export default function GameRoom() {
   const [room,           setRoom]           = useState(null)
   const [isHost,         setIsHost]         = useState(false)
   const [joinCode,       setJoinCode]       = useState('')
-  const [selectedGame,   setSelectedGame]   = useState('trivia')
+  const [selectedGame,   setSelectedGame]   = useState('mathblitz')
   const [error,          setError]          = useState('')
   const [loading,        setLoading]        = useState(false)
   const [countdown,      setCountdown]      = useState(3)
@@ -29,7 +29,7 @@ export default function GameRoom() {
   const [rounds,         setRounds]         = useState([])
   const [seriesScore,    setSeriesScore]    = useState({ me: 0, opp: 0, draws: 0 })
   const [showNextPicker, setShowNextPicker] = useState(false)
-  const [nextGameChoice, setNextGameChoice] = useState('trivia')
+  const [nextGameChoice, setNextGameChoice] = useState('mathblitz')
 
   const channelRef    = useRef(null)
   const rewardRef     = useRef(false)
@@ -50,6 +50,24 @@ export default function GameRoom() {
   }, [])
 
   useEffect(() => () => { channelRef.current?.unsubscribe() }, [])
+
+  // ── Reconnect after page refresh ──────────────────────────
+  useEffect(() => {
+    const saved = sessionStorage.getItem('arcadia_room')
+    if (!saved) return
+    const { roomId, asHost } = JSON.parse(saved)
+    supabase.from('rooms').select('*').eq('id', roomId).maybeSingle()
+      .then(({ data }) => {
+        if (!data || data.status === 'finished') {
+          sessionStorage.removeItem('arcadia_room')
+          return
+        }
+        setRoom(data)
+        setIsHost(asHost)
+        setScreen('lobby')
+        subscribeToRoom(data.id)
+      })
+  }, [subscribeToRoom])
 
   // React to room state changes from Realtime
   useEffect(() => {
@@ -127,6 +145,7 @@ export default function GameRoom() {
       }).select().maybeSingle()
       if (err) throw err
       setRoom(data); setIsHost(true); setScreen('lobby')
+      sessionStorage.setItem('arcadia_room', JSON.stringify({ roomId: data.id, asHost: true }))
       subscribeToRoom(data.id)
     } catch (e) { setError(e.message || 'Failed to create room') }
     finally { setLoading(false) }
@@ -147,6 +166,7 @@ export default function GameRoom() {
       if (joinErr) throw joinErr
       if (!data) throw new Error('Could not join room — permission denied. Try again.')
       setRoom(data); setIsHost(false); setScreen('lobby')
+      sessionStorage.setItem('arcadia_room', JSON.stringify({ roomId: data.id, asHost: false }))
       subscribeToRoom(data.id)
     } catch (e) { setError(e.message || 'Failed to join room') }
     finally { setLoading(false) }
@@ -184,6 +204,7 @@ export default function GameRoom() {
   }
 
   const playAgain = () => {
+    sessionStorage.removeItem('arcadia_room')
     setRoom(null); setIsHost(false); setMyScore(null)
     setRewardInfo(null); setScoreSent(false); rewardRef.current = false
     roundSavedRef.current = false; setCopied(false)
@@ -192,7 +213,23 @@ export default function GameRoom() {
     setScreen('create')
   }
 
-  const goHome = () => { channelRef.current?.unsubscribe(); navigate('/hub') }
+  // Forfeit mid-game — give opponent the win
+  const forfeit = async () => {
+    if (!room) { goHome(); return }
+    const update = isHost
+      ? { host_score: -1,  status: 'finished' }
+      : { guest_score: -1, status: 'finished' }
+    await supabase.from('rooms').update(update).eq('id', room.id)
+    sessionStorage.removeItem('arcadia_room')
+    channelRef.current?.unsubscribe()
+    navigate('/hub')
+  }
+
+  const goHome = () => {
+    sessionStorage.removeItem('arcadia_room')
+    channelRef.current?.unsubscribe()
+    navigate('/hub')
+  }
 
   const GameComp = room ? GAME_REGISTRY[room.game]?.component : null
 
@@ -406,7 +443,7 @@ export default function GameRoom() {
             {isHost ? (
               room.guest_id ? (
                 <motion.button whileTap={{ scale: 0.96 }} onClick={startGame}
-                  className="w-full py-4 rounded-2xl font-orbitron text-sm font-black tracking-widest"
+                  className="w-full py-4 rounded-2xl font-orbitron text-sm font-black tracking-widest mb-3"
                   style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid #00ff88', color: '#00ff88', boxShadow: '0 0 30px rgba(0,255,136,0.15)' }}>
                   ⚡ START GAME
                 </motion.button>
@@ -420,7 +457,7 @@ export default function GameRoom() {
                         transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.3 }} />
                     ))}
                   </div>
-                  <p className="font-rajdhani text-sm text-gray-500">Waiting for opponent to join...</p>
+                  <p className="font-rajdhani text-sm text-gray-500 mb-4">Waiting for opponent to join...</p>
                 </div>
               )
             ) : (
@@ -433,11 +470,20 @@ export default function GameRoom() {
                       transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.3 }} />
                   ))}
                 </div>
-                <p className="font-rajdhani text-sm text-gray-500">
-                  {room.guest_id ? 'Waiting for host to start the game...' : 'Joining room...'}
+                <p className="font-rajdhani text-sm text-gray-500 mb-4">
+                  {room.guest_id ? 'Waiting for host to start...' : 'Joining room...'}
                 </p>
               </div>
             )}
+
+            {/* Forfeit / leave lobby */}
+            <button onClick={goHome}
+              className="w-full py-2.5 rounded-xl font-orbitron text-[10px] tracking-widest transition-colors"
+              style={{ border: '1px solid rgba(255,0,110,0.25)', color: '#ff006e55' }}
+              onMouseEnter={e => { e.currentTarget.style.color='#ff006e'; e.currentTarget.style.borderColor='rgba(255,0,110,0.5)' }}
+              onMouseLeave={e => { e.currentTarget.style.color='#ff006e55'; e.currentTarget.style.borderColor='rgba(255,0,110,0.25)' }}>
+              ✕ LEAVE ROOM
+            </button>
           </motion.div>
         )}
 
@@ -483,6 +529,14 @@ export default function GameRoom() {
               </div>
             </div>
             <GameComp onFinish={handleGameFinish} />
+            {/* Forfeit button during play */}
+            <div className="px-4 mt-2 pb-2">
+              <button onClick={forfeit}
+                className="w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest transition-all"
+                style={{ border: '1px solid rgba(255,0,110,0.2)', color: 'rgba(255,0,110,0.4)' }}>
+                ✕ FORFEIT — GIVE OPPONENT THE WIN
+              </button>
+            </div>
           </div>
         )}
 
@@ -553,13 +607,18 @@ export default function GameRoom() {
           const oppFinalScore = isHost ? guestScore : hostScore
           const oppName       = isHost ? room.guest_username : room.host_username
           const oppAvatar     = isHost ? room.guest_avatar   : room.host_avatar
-          const iWon   = myFinalScore  > oppFinalScore
-          const isDraw = myFinalScore === oppFinalScore
+          // -1 = forfeited
+          const iForfeited   = myFinalScore  === -1
+          const oppForfeited = oppFinalScore === -1
+          const displayMyScore  = iForfeited  ? 0 : myFinalScore
+          const displayOppScore = oppForfeited ? 0 : oppFinalScore
+          const iWon   = !iForfeited && (oppForfeited || myFinalScore > oppFinalScore)
+          const isDraw = !iForfeited && !oppForfeited && myFinalScore === oppFinalScore
           const g      = GAME_REGISTRY[room.game]
-          const total  = myFinalScore + oppFinalScore || 1
-          const myPct  = Math.round((myFinalScore / total) * 100)
+          const total  = displayMyScore + displayOppScore || 1
+          const myPct  = Math.round((displayMyScore / total) * 100)
           const oppPct = 100 - myPct
-          const diff   = Math.abs(myFinalScore - oppFinalScore)
+          const diff   = Math.abs(displayMyScore - displayOppScore)
           const outcomeColor = isDraw ? '#ffd700' : iWon ? '#00ff88' : '#ff006e'
 
           return (
@@ -574,7 +633,7 @@ export default function GameRoom() {
                 <div className="text-5xl mb-2">{isDraw ? '🤝' : iWon ? '🏆' : '😤'}</div>
                 <h2 className="font-orbitron text-3xl font-black"
                   style={{ color: outcomeColor, textShadow: `0 0 30px ${outcomeColor}80` }}>
-                  {isDraw ? "IT'S A DRAW" : iWon ? 'YOU WIN!' : 'YOU LOSE!'}
+                  {isDraw ? "IT'S A DRAW" : iWon ? (oppForfeited ? 'OPPONENT QUIT!' : 'YOU WIN!') : (iForfeited ? 'YOU FORFEITED' : 'YOU LOSE!')}
                 </h2>
                 <p className="font-orbitron text-[10px] mt-1" style={{ color: g.color }}>
                   {g.icon} {g.label}
@@ -611,15 +670,15 @@ export default function GameRoom() {
                     <div className="flex items-baseline gap-2">
                       <span className="font-orbitron text-2xl font-black"
                         style={{ color: iWon ? '#00ff88' : isDraw ? '#ffd700' : '#ff006e' }}>
-                        {myFinalScore.toLocaleString()}
+                        {iForfeited ? 'OUT' : displayMyScore.toLocaleString()}
                       </span>
                       <span className="font-orbitron text-xs text-gray-700">–</span>
                       <span className="font-orbitron text-2xl font-black"
                         style={{ color: !iWon && !isDraw ? '#00ff88' : isDraw ? '#ffd700' : '#ff006e' }}>
-                        {oppFinalScore.toLocaleString()}
+                        {oppForfeited ? 'OUT' : displayOppScore.toLocaleString()}
                       </span>
                     </div>
-                    {!isDraw && (
+                    {!isDraw && !iForfeited && !oppForfeited && (
                       <p className="font-rajdhani text-[11px] text-gray-600">
                         by {diff.toLocaleString()} pts
                       </p>

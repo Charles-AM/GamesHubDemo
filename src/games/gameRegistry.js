@@ -1,14 +1,14 @@
-import TriviaGame    from './trivia/TriviaGame'
-import WordleGame    from './wordle/WordleGame'
+import MathBlitzGame  from './mathblitz/MathBlitzGame'
+import WordleGame     from './wordle/WordleGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
-import CrosswordGame from './crossword/CrosswordGame'
-import FlagGame      from './flags/FlagGame'
+import CrosswordGame  from './crossword/CrosswordGame'
+import FlagGame       from './flags/FlagGame'
 
 export const GAME_REGISTRY = {
-  trivia: {
-    id: 'trivia', component: TriviaGame,
-    label: 'TRIVIA QUIZ', desc: 'Race through 10 questions as fast as you can',
-    icon: '🧠', tag: 'KNOWLEDGE',
+  mathblitz: {
+    id: 'mathblitz', component: MathBlitzGame,
+    label: 'MATH BLITZ', desc: 'Solve as many equations as you can in 60 seconds',
+    icon: '⚡', tag: 'SPEED',
     color: '#00f5ff',
     gradient: 'linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,80,255,0.15))',
     border: 'rgba(0,245,255,0.45)',

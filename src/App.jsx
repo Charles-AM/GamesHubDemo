@@ -1,14 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { UserProvider, useUser } from './context/UserContext'
-import UserSetup   from './pages/UserSetup'
-import Hub         from './pages/Hub'
-import Profile     from './pages/Profile'
-import Leaderboard from './pages/Leaderboard'
-import GamePage    from './pages/GamePage'
-import GameRoom    from './pages/GameRoom'
-import BottomNav   from './components/BottomNav'
+import UserSetup from './pages/UserSetup'
+import Hub       from './pages/Hub'
+import Profile   from './pages/Profile'
+import GamePage  from './pages/GamePage'
+import GameRoom  from './pages/GameRoom'
+import BottomNav from './components/BottomNav'
 
-const NAV_ROUTES = ['/hub', '/profile', '/leaderboard', '/room']
+const NAV_ROUTES = ['/hub', '/profile', '/room']
 
 function LoadingScreen() {
   return (
@@ -37,17 +36,16 @@ function AppRoutes() {
 
   if (loading) return <LoadingScreen />
 
-  // Authenticated but no profile yet, or mid password-recovery → finish setup
   const setupNeeded = !user || needsProfile || isPasswordRecovery
 
   return (
     <Routes>
-      <Route path="/"            element={setupNeeded ? <UserSetup /> : <Navigate to="/hub" />} />
-      <Route path="/hub"         element={setupNeeded ? <Navigate to="/" /> : <Hub />} />
-      <Route path="/profile"     element={setupNeeded ? <Navigate to="/" /> : <Profile />} />
-      <Route path="/leaderboard" element={setupNeeded ? <Navigate to="/" /> : <Leaderboard />} />
-      <Route path="/game/:gameId/:mode" element={setupNeeded ? <Navigate to="/" /> : <GamePage />} />
-      <Route path="/room"              element={setupNeeded ? <Navigate to="/" /> : <GameRoom />} />
+      <Route path="/"                    element={setupNeeded ? <UserSetup /> : <Navigate to="/hub" />} />
+      <Route path="/hub"                 element={setupNeeded ? <Navigate to="/" /> : <Hub />} />
+      <Route path="/profile"             element={setupNeeded ? <Navigate to="/" /> : <Profile />} />
+      <Route path="/game/:gameId/:mode"  element={setupNeeded ? <Navigate to="/" /> : <GamePage />} />
+      <Route path="/room"                element={setupNeeded ? <Navigate to="/" /> : <GameRoom />} />
+      <Route path="*"                    element={<Navigate to="/" />} />
     </Routes>
   )
 }
