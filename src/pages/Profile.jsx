@@ -45,9 +45,9 @@ export default function Profile() {
   const pct       = getLevelPct(xp)
   const toNext    = getXpToNext(xp)
   const joinDate  = new Date(user.joinedAt).toLocaleDateString('en', { month: 'short', year: 'numeric' })
-  const totalPlays  = Object.values(scores).reduce((a, s) => a + s.plays, 0)
-  const totalWins   = Object.values(scores).reduce((a, s) => a + (s.wins   || 0), 0)
-  const totalLoss   = Object.values(scores).reduce((a, s) => a + (s.losses || 0), 0)
+  const totalPlays  = Object.values(scores).reduce((a, s) => a + (s.plays || 0), 0)
+  const totalWins   = matchHistory.filter(m => m.mode === 'versus' && m.won === true).length
+  const totalLoss   = matchHistory.filter(m => m.mode === 'versus' && m.won === false).length
   const winRate     = totalWins + totalLoss > 0 ? Math.round((totalWins / (totalWins + totalLoss)) * 100) : 0
 
   return (
@@ -141,7 +141,7 @@ export default function Profile() {
                 <div className="flex-1">
                   <p className="font-orbitron text-xs font-bold" style={{ color: s ? g.color : '#444' }}>{g.label}</p>
                   {s ? (
-                    <p className="font-rajdhani text-[10px] text-gray-500">{s.plays} played · {s.wins || 0}W {s.losses || 0}L battle</p>
+                    <p className="font-rajdhani text-[10px] text-gray-500">{s.plays} played · best {s.best}</p>
                   ) : (
                     <p className="font-rajdhani text-[10px] text-gray-600">Not played yet</p>
                   )}

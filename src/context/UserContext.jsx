@@ -275,7 +275,7 @@ export function UserProvider({ children }) {
       supabase.from('scores').upsert({
         user_id: uid, game,
         best: newGame.best, last_score: newGame.last,
-        plays: newGame.plays, wins: newGame.wins, losses: newGame.losses,
+        plays: newGame.plays,
       }, { onConflict: 'user_id,game' }),
 
       supabase.from('profiles').update({
