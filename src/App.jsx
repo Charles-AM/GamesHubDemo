@@ -5,6 +5,7 @@ import Hub          from './pages/Hub'
 import Profile      from './pages/Profile'
 import GamePage     from './pages/GamePage'
 import GameRoom     from './pages/GameRoom'
+import Admin        from './pages/Admin'
 import BottomNav    from './components/BottomNav'
 import LevelUpToast from './components/LevelUpToast'
 
@@ -46,6 +47,7 @@ function AppRoutes() {
       <Route path="/profile"             element={setupNeeded ? <Navigate to="/" /> : <Profile />} />
       <Route path="/game/:gameId/:mode"  element={setupNeeded ? <Navigate to="/" /> : <GamePage />} />
       <Route path="/room"                element={setupNeeded ? <Navigate to="/" /> : <GameRoom />} />
+      <Route path="/admin"              element={<Admin />} />
       <Route path="*"                    element={<Navigate to="/" />} />
     </Routes>
   )
