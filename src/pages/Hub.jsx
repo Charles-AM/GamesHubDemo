@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
-const GAME_ICONS = { trivia: '🧠', wordle: '🔤', crossword: '✏️', wordsearch: '🔍', flags: '🌍' }
-const GAME_NAMES = { trivia: 'TRIVIA', wordle: 'WORDLE', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS' }
+const GAME_ICONS = { mathblitz: '⚡', wordle: '🔤', crossword: '✏️', wordsearch: '🔍', flags: '🌍' }
+const GAME_NAMES = { mathblitz: 'MATH BLITZ', wordle: 'WORDLE', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS' }
 
 function timeAgo(ts) {
   const diff = Date.now() - ts
@@ -20,7 +20,8 @@ function timeAgo(ts) {
 export default function Hub() {
   const { user, scores, matchHistory, signOut: logout } = useUser()
   const navigate = useNavigate()
-  const [expandGame, setExpandGame] = useState(null)
+  const [expandGame,  setExpandGame]  = useState(null)
+  const [showHowTo,   setShowHowTo]   = useState(false)
 
   const xp    = user?.xp || 0
   const level = getLevel(xp)
@@ -38,8 +39,8 @@ export default function Hub() {
   // Recent activity (last 4 matches)
   const recent = matchHistory.slice(0, 4)
 
-  const totalPlays = Object.values(scores).reduce((a, s) => a + s.plays, 0)
-  const totalWins  = Object.values(scores).reduce((a, s) => a + (s.wins || 0), 0)
+  const totalPlays = Object.values(scores).reduce((a, s) => a + (s.plays || 0), 0)
+  const totalWins  = matchHistory.filter(m => m.mode === 'versus' && m.won === true).length
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden">
@@ -60,10 +61,16 @@ export default function Hub() {
             ARCADIA DUELS
           </span>
         </div>
-        <button onClick={logout}
-          className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors px-2 py-1">
-          EXIT ›
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowHowTo(true)}
+            className="font-orbitron text-[10px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1">
+            ? HOW TO PLAY
+          </button>
+          <button onClick={logout}
+            className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors px-2 py-1">
+            EXIT ›
+          </button>
+        </div>
       </div>
 
       {/* ── Profile Card ── */}
@@ -196,6 +203,110 @@ export default function Hub() {
         <GameCardWide game={GAME_LIST[4]} scores={scores[GAME_LIST[4].id]} navigate={navigate} delay={0.24} />
       </div>
 
+      {/* ── How to Play Modal ── */}
+      <AnimatePresence>
+        {showHowTo && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center px-0"
+            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+            onClick={() => setShowHowTo(false)}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-lg rounded-t-3xl overflow-y-auto"
+              style={{ background: 'rgba(10,10,28,0.98)', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '85vh' }}>
+
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+              </div>
+
+              <div className="px-5 pb-8 pt-2">
+                <h2 className="font-orbitron text-lg font-black text-center mb-1"
+                  style={{ background: 'linear-gradient(90deg,#00f5ff,#bf00ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  HOW TO PLAY
+                </h2>
+                <p className="font-rajdhani text-xs text-gray-500 text-center mb-6 tracking-widest">ARCADIA DUELS</p>
+
+                {/* Games */}
+                <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">THE GAMES</p>
+                {[
+                  { icon: '⚡', name: 'MATH BLITZ', desc: 'Solve as many arithmetic equations as you can in 60 seconds. Pick the correct answer from 4 options. Correct answers earn +10 pts, wrong ones cost –3 pts. Speed and accuracy win.' },
+                  { icon: '🔤', name: 'WORDLE DUEL', desc: 'Guess a hidden 5-letter word in up to 6 tries. Green means right letter, right spot. Yellow means right letter, wrong spot. Fewer guesses = higher score.' },
+                  { icon: '✏️', name: 'CROSSWORD', desc: 'Fill in the grid using the clues. Complete words earn points. Finish the whole puzzle for a bonus. Think carefully — you have unlimited time.' },
+                  { icon: '🔍', name: 'WORD SEARCH', desc: 'Find all the hidden words in the grid before time runs out. Words can go in any direction. Tap the first and last letter of each word to select it.' },
+                  { icon: '🌍', name: 'FLAG FRENZY', desc: 'Identify the country from its flag. 10 rounds, 4 choices each. Fast correct answers give bonus points. A great way to test your world knowledge.' },
+                ].map(g => (
+                  <div key={g.name} className="flex gap-3 mb-4 pb-4"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      {g.icon}
+                    </div>
+                    <div>
+                      <p className="font-orbitron text-[11px] font-bold text-white mb-1">{g.name}</p>
+                      <p className="font-rajdhani text-xs text-gray-400 leading-relaxed">{g.desc}</p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Battle mode */}
+                <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3 mt-2">BATTLE MODE ⚔️</p>
+                <div className="rounded-2xl p-4 mb-4"
+                  style={{ background: 'rgba(191,0,255,0.06)', border: '1px solid rgba(191,0,255,0.25)' }}>
+                  <p className="font-rajdhani text-sm text-gray-300 leading-relaxed mb-3">
+                    Challenge a friend to a real-time duel — both of you play the same game simultaneously and your scores are compared when time's up.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { step: '1', text: 'One player creates a room and picks a game' },
+                      { step: '2', text: 'Share the 6-character code with your opponent' },
+                      { step: '3', text: 'Once they join, the host starts the match' },
+                      { step: '4', text: 'Both players play at the same time — highest score wins' },
+                      { step: '5', text: 'Play multiple rounds in the same room and track series wins' },
+                    ].map(s => (
+                      <div key={s.step} className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center font-orbitron text-[10px] flex-shrink-0 mt-0.5"
+                          style={{ background: 'rgba(191,0,255,0.2)', color: '#bf00ff', border: '1px solid rgba(191,0,255,0.4)' }}>
+                          {s.step}
+                        </div>
+                        <p className="font-rajdhani text-xs text-gray-400">{s.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* XP */}
+                <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">XP & LEVELS</p>
+                <div className="rounded-2xl p-4"
+                  style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.2)' }}>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { label: 'Any game', xp: '+10 base + score bonus' },
+                      { label: 'Daily challenge', xp: '2× XP multiplier' },
+                      { label: 'Battle win', xp: '+60 bonus XP' },
+                      { label: 'Battle loss', xp: '+20 bonus XP' },
+                    ].map(r => (
+                      <div key={r.label} className="flex items-center justify-between">
+                        <p className="font-rajdhani text-xs text-gray-400">{r.label}</p>
+                        <p className="font-orbitron text-[10px]" style={{ color: '#00f5ff' }}>{r.xp}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="font-rajdhani text-xs text-gray-600 mt-3">Every 300 XP = 1 level up. Play daily to keep your streak alive.</p>
+                </div>
+
+                <button onClick={() => setShowHowTo(false)}
+                  className="w-full mt-5 py-3 rounded-2xl font-orbitron text-xs tracking-widest transition-all"
+                  style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid rgba(0,245,255,0.3)', color: '#00f5ff' }}>
+                  LET'S PLAY
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Recent Activity ── */}
       {recent.length > 0 && (
         <div className="relative z-10 px-4 mt-5">
@@ -239,9 +350,6 @@ function GameCard({ game, scores: s, navigate, delay, expandGame, setExpandGame 
         <p className="font-orbitron text-[11px] font-black mb-0.5" style={{ color: game.color }}>
           {GAME_NAMES[game.id] || game.label}
         </p>
-        {s?.wins > 0 && (
-          <p className="font-rajdhani text-[10px] text-gray-500 mb-2">{s.wins}W {s.losses || 0}L</p>
-        )}
 
         {!s && <div className="h-3 mb-2" />}
 
@@ -279,7 +387,6 @@ function GameCardWide({ game, scores: s, navigate, delay }) {
             <div className="text-right flex-shrink-0">
               <p className="font-orbitron text-xl font-black" style={{ color: game.color }}>{s.best}</p>
               <p className="font-rajdhani text-[10px] text-gray-500">{s.plays} plays</p>
-              {s.wins > 0 && <p className="font-rajdhani text-[10px] text-gray-600">{s.wins}W {s.losses || 0}L</p>}
             </div>
           )}
         </div>

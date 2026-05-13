@@ -270,24 +270,21 @@ export function UserProvider({ children }) {
     const record = { id: Date.now(), game, mode, score, won, p2Name, p2Score, isDaily, xpEarned, date: Date.now() }
     setMatchHistory(h => [record, ...h].slice(0, 30))
 
-    // ── Background sync to Supabase ─────────────────────
-    Promise.all([
-      supabase.from('scores').upsert({
-        user_id: uid, game,
-        best: newGame.best, last_score: newGame.last,
-        plays: newGame.plays,
-      }, { onConflict: 'user_id,game' }),
+    // ── Background sync to Supabase (each fails independently) ───
+    supabase.from('scores').upsert({
+      user_id: uid, game,
+      best: newGame.best, last_score: newGame.last,
+      plays: newGame.plays,
+    }, { onConflict: 'user_id,game' }).catch(() => {})
 
-      supabase.from('profiles').update({
-        xp: newXp, streak_count: newStreakCount, streak_last_date: today,
-      }).eq('id', uid),
+    supabase.from('profiles').update({
+      xp: newXp, streak_count: newStreakCount, streak_last_date: today,
+    }).eq('id', uid).catch(() => {})
 
-      supabase.from('matches').insert({
-        user_id: uid, game, mode, score, won,
-        p2_name: p2Name, p2_score: p2Score,
-        is_daily: isDaily, xp_earned: xpEarned,
-      }),
-    ]).catch(() => {})
+    // Insert match — core fields only so it always succeeds regardless of schema
+    supabase.from('matches').insert({
+      user_id: uid, game, mode, score, won,
+    }).catch(() => {})
 
     return { xpEarned, leveledUp: newLevel > prevLevel, newLevel }
   }, [])
