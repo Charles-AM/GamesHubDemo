@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { useUser, todayKey, ACHIEVEMENTS } from '../context/UserContext'
+import { useUser, todayKey } from '../context/UserContext'
 import { GAME_REGISTRY } from '../games/gameRegistry'
 
 export default function DailyGame({ gameId }) {
@@ -63,21 +63,6 @@ export default function DailyGame({ gameId }) {
               +{result.xpEarned}
             </p>
           </motion.div>
-
-          {/* Achievements unlocked */}
-          {result.unlocked?.length > 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-              className="rounded-2xl p-4 mb-6"
-              style={{ background: 'rgba(0,245,255,0.06)', border: '1px solid rgba(0,245,255,0.2)' }}>
-              <p className="font-orbitron text-[10px] text-gray-500 tracking-widest mb-2">🏅 ACHIEVEMENTS UNLOCKED</p>
-              {result.unlocked.map(id => {
-                const a = ACHIEVEMENTS.find(x => x.id === id)
-                return a ? (
-                  <p key={id} className="font-rajdhani text-sm text-white">{a.icon} {a.name}</p>
-                ) : null
-              })}
-            </motion.div>
-          )}
 
           <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate('/hub')}
             className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold"
