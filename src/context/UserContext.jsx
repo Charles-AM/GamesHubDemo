@@ -58,13 +58,14 @@ function profileToUser(p) {
 
 // ── Provider ───────────────────────────────────────────────
 export function UserProvider({ children }) {
-  const [authUser,          setAuthUser]          = useState(null)
-  const [profile,           setProfile]           = useState(null)
-  const [scores,            setScores]            = useState({})
-  const [matchHistory,      setMatchHistory]      = useState([])
-  const [loading,           setLoading]           = useState(true)
-  const [needsProfile,      setNeedsProfile]      = useState(false)
+  const [authUser,           setAuthUser]           = useState(null)
+  const [profile,            setProfile]            = useState(null)
+  const [scores,             setScores]             = useState({})
+  const [matchHistory,       setMatchHistory]       = useState([])
+  const [loading,            setLoading]            = useState(true)
+  const [needsProfile,       setNeedsProfile]       = useState(false)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  const [levelUpInfo,        setLevelUpInfo]        = useState(null) // { newLevel } when leveled up
 
   // Refs so recordGame callbacks never go stale
   const scoresRef      = useRef({})
@@ -265,6 +266,7 @@ export function UserProvider({ children }) {
     const newXp    = prof.xp + xpEarned
     const newLevel = getLevel(newXp)
     setProfile(p => ({ ...p, xp: newXp, streak_count: newStreakCount, streak_last_date: today }))
+    if (newLevel > prevLevel) setLevelUpInfo({ newLevel })
 
     // Match history (optimistic)
     const record = { id: Date.now(), game, mode, score, won, p2Name, p2Score, isDaily, xpEarned, date: Date.now() }
@@ -296,10 +298,13 @@ export function UserProvider({ children }) {
 
   const user = profileToUser(profile)
 
+  const clearLevelUp = () => setLevelUpInfo(null)
+
   return (
     <Ctx.Provider value={{
       user, scores, matchHistory,
       loading, needsProfile, isPasswordRecovery,
+      levelUpInfo, clearLevelUp,
       signUp, signIn, signOut, createProfile,
       sendPasswordReset, updatePassword, deleteAccount,
       recordGame, updateScore,

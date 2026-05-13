@@ -191,16 +191,16 @@ export default function Hub() {
 
       {/* ── Game Grid (2-col for first 4, full for 5th) ── */}
       <div className="relative z-10 px-4">
-        {/* Row 1: Trivia + Wordle */}
+        {/* Row 1–2: first 4 games in 2-col grid */}
         <div className="grid grid-cols-2 gap-3 mb-3">
-          {GAME_LIST.slice(0, 2).map((g, i) => <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={i * 0.06} expandGame={expandGame} setExpandGame={setExpandGame} />)}
+          {GAME_LIST.slice(0, 4).map((g, i) => (
+            <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={i * 0.06} />
+          ))}
         </div>
-        {/* Row 2: Crossword + Word Search */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {GAME_LIST.slice(2, 4).map((g, i) => <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={(i + 2) * 0.06} expandGame={expandGame} setExpandGame={setExpandGame} />)}
-        </div>
-        {/* Row 3: Flag Frenzy full width */}
-        <GameCardWide game={GAME_LIST[4]} scores={scores[GAME_LIST[4].id]} navigate={navigate} delay={0.24} />
+        {/* Row 3: last game full width */}
+        {GAME_LIST[4] && (
+          <GameCardWide game={GAME_LIST[4]} scores={scores[GAME_LIST[4].id]} navigate={navigate} delay={0.24} />
+        )}
       </div>
 
       {/* ── How to Play Modal ── */}
@@ -276,26 +276,6 @@ export default function Hub() {
                   </div>
                 </div>
 
-                {/* XP */}
-                <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">XP & LEVELS</p>
-                <div className="rounded-2xl p-4"
-                  style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.2)' }}>
-                  <div className="flex flex-col gap-2">
-                    {[
-                      { label: 'Any game', xp: '+10 base + score bonus' },
-                      { label: 'Daily challenge', xp: '2× XP multiplier' },
-                      { label: 'Battle win', xp: '+60 bonus XP' },
-                      { label: 'Battle loss', xp: '+20 bonus XP' },
-                    ].map(r => (
-                      <div key={r.label} className="flex items-center justify-between">
-                        <p className="font-rajdhani text-xs text-gray-400">{r.label}</p>
-                        <p className="font-orbitron text-[10px]" style={{ color: '#00f5ff' }}>{r.xp}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="font-rajdhani text-xs text-gray-600 mt-3">Every 300 XP = 1 level up. Play daily to keep your streak alive.</p>
-                </div>
-
                 <button onClick={() => setShowHowTo(false)}
                   className="w-full mt-5 py-3 rounded-2xl font-orbitron text-xs tracking-widest transition-all"
                   style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid rgba(0,245,255,0.3)', color: '#00f5ff' }}>
@@ -325,36 +305,33 @@ export default function Hub() {
   )
 }
 
-function GameCard({ game, scores: s, navigate, delay, expandGame, setExpandGame }) {
-  const expanded = expandGame === game.id
+function GameCard({ game, scores: s, navigate, delay }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35, type: 'spring', stiffness: 130 }}>
-      <div className="rounded-2xl p-3 relative overflow-hidden"
+      <div className="rounded-2xl p-3 flex flex-col h-full"
         style={{ background: game.gradient, border: `1px solid ${game.border}`, boxShadow: `0 4px 24px ${game.glow}` }}>
 
-        {/* Icon + tag */}
+        {/* Icon + best score */}
         <div className="flex items-start justify-between mb-2">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
             style={{ background: `${game.color}20`, border: `1px solid ${game.color}44` }}>
             {game.icon}
           </div>
           {s && (
             <div className="text-right">
-              <p className="font-orbitron text-base font-black" style={{ color: game.color }}>{s.best}</p>
-              <p className="font-rajdhani text-[10px] text-gray-600">{s.plays} plays</p>
+              <p className="font-orbitron text-sm font-black leading-tight" style={{ color: game.color }}>{s.best}</p>
+              <p className="font-rajdhani text-[9px] text-gray-600">{s.plays}× played</p>
             </div>
           )}
         </div>
 
-        <p className="font-orbitron text-[11px] font-black mb-0.5" style={{ color: game.color }}>
+        <p className="font-orbitron text-[10px] font-black mb-2 leading-tight flex-1" style={{ color: game.color }}>
           {GAME_NAMES[game.id] || game.label}
         </p>
 
-        {!s && <div className="h-3 mb-2" />}
-
         <button onClick={() => navigate(`/game/${game.id}/solo`)}
-          className="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold tracking-wider transition-all"
+          className="w-full py-1.5 rounded-lg font-orbitron text-[9px] font-bold tracking-wider transition-all"
           style={{ background: `${game.color}18`, border: `1px solid ${game.color}66`, color: game.color }}>
           ▶ PLAY
         </button>
@@ -411,9 +388,9 @@ function ActivityRow({ match, i }) {
   let dotColor = '#555'
   let label    = `▶ Solo · ${match.score} pts`
   if (match.isDaily) { dotColor = '#ffd700'; label = `📅 Daily · ${match.score} pts` }
-  else if (isVs && isWin)  { dotColor = '#00ff88'; label = `⚔ Beat ${match.p2Name} · ${match.score} vs ${match.p2Score}` }
-  else if (isVs && isLoss) { dotColor = '#ff006e'; label = `⚔ Lost to ${match.p2Name} · ${match.score} vs ${match.p2Score}` }
-  else if (isVs)            { dotColor = '#888';   label = `⚔ Drew ${match.p2Name} · ${match.score}` }
+  else if (isVs && isWin)  { dotColor = '#00ff88'; label = `⚔ Beat ${match.p2Name ?? 'opponent'}${match.p2Score != null ? ` · ${match.score} vs ${match.p2Score}` : ''}` }
+  else if (isVs && isLoss) { dotColor = '#ff006e'; label = `⚔ Lost to ${match.p2Name ?? 'opponent'}${match.p2Score != null ? ` · ${match.score} vs ${match.p2Score}` : ''}` }
+  else if (isVs)            { dotColor = '#888';   label = `⚔ Drew ${match.p2Name ?? 'opponent'}` }
 
   return (
     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}

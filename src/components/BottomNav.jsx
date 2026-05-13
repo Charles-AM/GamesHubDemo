@@ -11,8 +11,8 @@ export default function BottomNav() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50"
-      style={{ maxWidth: 480, margin: '0 auto', left: 0, right: 0 }}>
+    <nav className="fixed bottom-0 z-50"
+      style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480 }}>
       <div className="flex items-stretch"
         style={{
           background: 'rgba(8,8,24,0.95)',

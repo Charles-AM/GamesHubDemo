@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { UserProvider, useUser } from './context/UserContext'
-import UserSetup from './pages/UserSetup'
-import Hub       from './pages/Hub'
-import Profile   from './pages/Profile'
-import GamePage  from './pages/GamePage'
-import GameRoom  from './pages/GameRoom'
-import BottomNav from './components/BottomNav'
+import UserSetup    from './pages/UserSetup'
+import Hub          from './pages/Hub'
+import Profile      from './pages/Profile'
+import GamePage     from './pages/GamePage'
+import GameRoom     from './pages/GameRoom'
+import BottomNav    from './components/BottomNav'
+import LevelUpToast from './components/LevelUpToast'
 
 const NAV_ROUTES = ['/hub', '/profile', '/room']
 
@@ -55,7 +56,11 @@ export default function App() {
     <UserProvider>
       <BrowserRouter>
         <div className="scanlines grid-bg min-h-screen">
-          <Layout />
+          {/* Constrain to mobile width on desktop, centred */}
+          <div className="relative mx-auto min-h-screen" style={{ maxWidth: 480 }}>
+            <LevelUpToast />
+            <Layout />
+          </div>
         </div>
       </BrowserRouter>
     </UserProvider>

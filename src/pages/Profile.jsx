@@ -195,7 +195,7 @@ export default function Profile() {
                     </div>
                     {m.mode === 'versus' && m.p2Name && (
                       <p className="font-rajdhani text-[10px] text-gray-500 truncate">
-                        vs {m.p2Name} · {m.score} : {m.p2Score}
+                        vs {m.p2Name}{m.p2Score != null ? ` · ${m.score} : ${m.p2Score}` : ''}
                       </p>
                     )}
                   </div>
