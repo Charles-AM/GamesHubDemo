@@ -9,7 +9,6 @@ const ROUNDS  = 10
 const MAX_SKIPS = 3
 const POINTS  = { easy: 10, medium: 20, hard: 30 }
 
-// Rotate through all categories for variety every game
 const CATEGORIES = [9,11,12,14,15,17,18,20,21,22,23,25,26,27]
 
 function decodeHTML(html) {
@@ -19,21 +18,50 @@ function decodeHTML(html) {
 }
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
-async function fetchQuestions() {
-  // Pick two random categories and merge for more variety
-  const cats = shuffle(CATEGORIES).slice(0, 2)
-  const results = []
-  for (const cat of cats) {
-    const res  = await fetch(`https://opentdb.com/api.php?amount=5&type=multiple&category=${cat}`)
+async function fetchWithTimeout(url, ms = 8000) {
+  const ctrl = new AbortController()
+  const id   = setTimeout(() => ctrl.abort(), ms)
+  try {
+    const res  = await fetch(url, { signal: ctrl.signal })
     const data = await res.json()
-    if (data.response_code === 0) results.push(...data.results)
+    return data
+  } finally {
+    clearTimeout(id)
   }
-  if (results.length < ROUNDS) {
-    const res  = await fetch(`https://opentdb.com/api.php?amount=${ROUNDS}&type=multiple`)
-    const data = await res.json()
-    return data.results.map(mapQ)
+}
+
+async function fetchQuestions(attempt = 0) {
+  // response_code 5 = rate limited — wait and retry (max 3 tries)
+  if (attempt >= 3) throw new Error('Too many retries')
+
+  try {
+    // Single request: all ROUNDS from any category (most reliable)
+    const data = await fetchWithTimeout(
+      `https://opentdb.com/api.php?amount=${ROUNDS}&type=multiple`
+    )
+    if (data.response_code === 5) {
+      // Rate limited — wait 2s then retry
+      await new Promise(r => setTimeout(r, 2000))
+      return fetchQuestions(attempt + 1)
+    }
+    if (data.response_code === 0 && data.results?.length >= ROUNDS) {
+      return data.results.map(mapQ)
+    }
+    // Fallback: any-category fetch
+    const fallback = await fetchWithTimeout(
+      `https://opentdb.com/api.php?amount=${ROUNDS}&type=multiple&difficulty=easy`
+    )
+    if (fallback.response_code === 0 && fallback.results?.length) {
+      return fallback.results.map(mapQ)
+    }
+    throw new Error('No questions returned')
+  } catch (e) {
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 1500))
+      return fetchQuestions(attempt + 1)
+    }
+    throw e
   }
-  return shuffle(results).slice(0, ROUNDS).map(mapQ)
 }
 
 function mapQ(q) {

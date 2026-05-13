@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
-import { useUser, ACHIEVEMENTS } from '../context/UserContext'
+import { useUser } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
 function genCode() {
@@ -655,13 +655,13 @@ export default function GameRoom() {
                 </div>
               </motion.div>
 
-              {/* XP / achievements */}
+              {/* XP earned */}
               {rewardInfo && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                   className="rounded-2xl p-4 mb-4"
                   style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.2)' }}>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between">
                     <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">XP EARNED</p>
                     <p className="font-orbitron text-xl font-black" style={{ color: '#00f5ff' }}>
                       +{rewardInfo.xpEarned}
@@ -673,19 +673,6 @@ export default function GameRoom() {
                         style={{ background: 'rgba(255,215,0,0.15)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.4)' }}>
                         ⬆ LEVEL UP! Now LV.{rewardInfo.newLevel}
                       </span>
-                    </div>
-                  )}
-                  {rewardInfo.unlocked?.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {rewardInfo.unlocked.map(id => {
-                        const a = ACHIEVEMENTS.find(x => x.id === id)
-                        return a ? (
-                          <span key={id} className="font-orbitron text-[9px] px-2 py-1 rounded-lg"
-                            style={{ background: 'rgba(255,215,0,0.1)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.3)' }}>
-                            {a.icon} {a.name}
-                          </span>
-                        ) : null
-                      })}
                     </div>
                   )}
                 </motion.div>

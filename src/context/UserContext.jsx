@@ -19,25 +19,6 @@ export const AVATARS = [
   '🦅','🐉','🌙','⚡','🎯','💀','🌺','🔮',
 ]
 
-// ── Achievements ───────────────────────────────────────────
-export const ACHIEVEMENTS = [
-  { id: 'first_game',  icon: '🎮', name: 'ROOKIE',        desc: 'Play your first game',         xp: 50  },
-  { id: 'vs_first',    icon: '⚔️', name: 'CHALLENGER',    desc: 'Play your first VS match',     xp: 50  },
-  { id: 'vs_win',      icon: '🏆', name: 'VICTOR',        desc: 'Win your first VS match',      xp: 100 },
-  { id: 'vs_5wins',    icon: '⚡', name: 'STREAK KING',   desc: 'Win 5 VS matches',             xp: 200 },
-  { id: 'vs_10wins',   icon: '👑', name: 'DOMINATOR',     desc: 'Win 10 VS matches',            xp: 300 },
-  { id: 'plays_10',    icon: '🔥', name: 'REGULAR',       desc: 'Play 10 games',                xp: 100 },
-  { id: 'plays_25',    icon: '💫', name: 'DEDICATED',     desc: 'Play 25 games',                xp: 150 },
-  { id: 'plays_50',    icon: '🌟', name: 'VETERAN',       desc: 'Play 50 games',                xp: 300 },
-  { id: 'all_games',   icon: '🗺️', name: 'EXPLORER',     desc: 'Play all 5 games',             xp: 100 },
-  { id: 'trivia_700',  icon: '🧠', name: 'GENIUS',        desc: 'Score 700+ in Trivia',         xp: 150 },
-  { id: 'flags_500',   icon: '🌍', name: 'GLOBE TROTTER', desc: 'Score 500+ in Flag Frenzy',    xp: 150 },
-  { id: 'wordle_2',    icon: '🔤', name: 'WORDSMITH',     desc: 'Solve Wordle in ≤2 tries',     xp: 200 },
-  { id: 'streak_3',    icon: '📅', name: 'ON FIRE',       desc: '3-day play streak',            xp: 150 },
-  { id: 'streak_7',    icon: '💎', name: 'UNSTOPPABLE',   desc: '7-day play streak',            xp: 500 },
-  { id: 'daily_done',  icon: '🌅', name: 'DAILY GRINDER', desc: 'Complete a daily challenge',   xp: 75  },
-]
-
 // ── Daily challenge ────────────────────────────────────────
 const DAILY_ROTATION = ['trivia', 'wordle', 'wordsearch', 'crossword', 'flags', 'trivia', 'flags']
 export const getDailyGame = () => DAILY_ROTATION[new Date().getDay()]
@@ -81,28 +62,24 @@ export function UserProvider({ children }) {
   const [profile,           setProfile]           = useState(null)
   const [scores,            setScores]            = useState({})
   const [matchHistory,      setMatchHistory]      = useState([])
-  const [achievements,      setAchievements]      = useState([])
   const [loading,           setLoading]           = useState(true)
   const [needsProfile,      setNeedsProfile]      = useState(false)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   // Refs so recordGame callbacks never go stale
   const scoresRef      = useRef({})
-  const achievRef      = useRef([])
   const profileRef     = useRef(null)
   const authUserRef    = useRef(null)
 
-  useEffect(() => { scoresRef.current   = scores       }, [scores])
-  useEffect(() => { achievRef.current   = achievements }, [achievements])
-  useEffect(() => { profileRef.current  = profile      }, [profile])
-  useEffect(() => { authUserRef.current = authUser     }, [authUser])
+  useEffect(() => { scoresRef.current   = scores  }, [scores])
+  useEffect(() => { profileRef.current  = profile }, [profile])
+  useEffect(() => { authUserRef.current = authUser }, [authUser])
 
   // ── Load all cloud data for a user ─────────────────────
   const loadUserData = useCallback(async (uid) => {
-    const [profRes, scoresRes, achievRes, histRes] = await Promise.all([
+    const [profRes, scoresRes, histRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', uid).single(),
       supabase.from('scores').select('*').eq('user_id', uid),
-      supabase.from('user_achievements').select('achievement_id').eq('user_id', uid),
       supabase.from('matches').select('*').eq('user_id', uid)
         .order('played_at', { ascending: false }).limit(30),
     ])
@@ -116,7 +93,6 @@ export function UserProvider({ children }) {
     setProfile(profRes.data)
     setNeedsProfile(false)
     setScores(rowsToScores(scoresRes.data))
-    setAchievements((achievRes.data || []).map(a => a.achievement_id))
     setMatchHistory((histRes.data || []).map(rowToMatch))
     setLoading(false)
   }, [])
@@ -284,45 +260,14 @@ export function UserProvider({ children }) {
       newStreakCount = prof.streak_last_date === yesterday ? prof.streak_count + 1 : 1
     }
 
-    // Achievements (optimistic)
-    const prevSet  = new Set(achievRef.current)
-    const newSet   = new Set(prevSet)
-    const unlocked = []
-    const totPlays = Object.values(newScores).reduce((a, s) => a + s.plays, 0)
-    const totWins  = Object.values(newScores).reduce((a, s) => a + (s.wins || 0), 0)
-    const gamesSet = new Set(Object.keys(newScores))
-
-    const chk = (id, cond) => {
-      if (cond && !newSet.has(id)) { newSet.add(id); unlocked.push(id) }
-    }
-    chk('first_game',  true)
-    chk('vs_first',    mode === 'versus')
-    chk('vs_win',      mode === 'versus' && won)
-    chk('vs_5wins',    totWins >= 5)
-    chk('vs_10wins',   totWins >= 10)
-    chk('plays_10',    totPlays >= 10)
-    chk('plays_25',    totPlays >= 25)
-    chk('plays_50',    totPlays >= 50)
-    chk('all_games',   gamesSet.size >= 5)
-    chk('trivia_700',  game === 'trivia' && score >= 700)
-    chk('flags_500',   game === 'flags'  && score >= 500)
-    chk('wordle_2',    game === 'wordle' && wordle_tries !== null && wordle_tries <= 2)
-    chk('streak_3',    newStreakCount >= 3)
-    chk('streak_7',    newStreakCount >= 7)
-    chk('daily_done',  isDaily)
-
-    const achievXp = unlocked.reduce((a, id) => a + (ACHIEVEMENTS.find(x => x.id === id)?.xp || 0), 0)
-    const totalXp  = xpEarned + achievXp
-
     // Profile XP + streak (optimistic)
     const prevLevel = getLevel(prof.xp)
-    const newXp    = prof.xp + totalXp
+    const newXp    = prof.xp + xpEarned
     const newLevel = getLevel(newXp)
     setProfile(p => ({ ...p, xp: newXp, streak_count: newStreakCount, streak_last_date: today }))
-    if (unlocked.length > 0) setAchievements([...newSet])
 
     // Match history (optimistic)
-    const record = { id: Date.now(), game, mode, score, won, p2Name, p2Score, isDaily, xpEarned: totalXp, date: Date.now() }
+    const record = { id: Date.now(), game, mode, score, won, p2Name, p2Score, isDaily, xpEarned, date: Date.now() }
     setMatchHistory(h => [record, ...h].slice(0, 30))
 
     // ── Background sync to Supabase ─────────────────────
@@ -340,18 +285,11 @@ export function UserProvider({ children }) {
       supabase.from('matches').insert({
         user_id: uid, game, mode, score, won,
         p2_name: p2Name, p2_score: p2Score,
-        is_daily: isDaily, xp_earned: totalXp,
+        is_daily: isDaily, xp_earned: xpEarned,
       }),
+    ]).catch(() => {})
 
-      unlocked.length > 0
-        ? supabase.from('user_achievements').upsert(
-            unlocked.map(id => ({ user_id: uid, achievement_id: id })),
-            { onConflict: 'user_id,achievement_id', ignoreDuplicates: true }
-          )
-        : null,
-    ].filter(Boolean)).catch(err => console.error('Supabase sync error:', err))
-
-    return { xpEarned: totalXp, leveledUp: newLevel > prevLevel, newLevel, unlocked }
+    return { xpEarned, leveledUp: newLevel > prevLevel, newLevel }
   }, [])
 
   // Legacy compat — games call updateScore(game, score)
@@ -363,7 +301,7 @@ export function UserProvider({ children }) {
 
   return (
     <Ctx.Provider value={{
-      user, scores, matchHistory, achievements,
+      user, scores, matchHistory,
       loading, needsProfile, isPasswordRecovery,
       signUp, signIn, signOut, createProfile,
       sendPasswordReset, updatePassword, deleteAccount,

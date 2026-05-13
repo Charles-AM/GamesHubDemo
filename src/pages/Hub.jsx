@@ -240,24 +240,16 @@ function GameCard({ game, scores: s, navigate, delay, expandGame, setExpandGame 
           {GAME_NAMES[game.id] || game.label}
         </p>
         {s?.wins > 0 && (
-          <p className="font-rajdhani text-[10px] text-gray-500 mb-2">{s.wins}W {s.losses || 0}L VS</p>
+          <p className="font-rajdhani text-[10px] text-gray-500 mb-2">{s.wins}W {s.losses || 0}L</p>
         )}
 
         {!s && <div className="h-3 mb-2" />}
 
-        {/* Buttons */}
-        <div className="flex gap-1.5">
-          <button onClick={() => navigate(`/game/${game.id}/solo`)}
-            className="flex-1 py-1.5 rounded-lg font-orbitron text-[10px] font-bold tracking-wider transition-all"
-            style={{ background: `${game.color}18`, border: `1px solid ${game.color}66`, color: game.color }}>
-            ▶ SOLO
-          </button>
-          <button onClick={() => navigate(`/game/${game.id}/versus`)}
-            className="flex-1 py-1.5 rounded-lg font-orbitron text-[10px] font-bold tracking-wider transition-all"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.15)', color: '#888' }}>
-            ⚔ VS
-          </button>
-        </div>
+        <button onClick={() => navigate(`/game/${game.id}/solo`)}
+          className="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold tracking-wider transition-all"
+          style={{ background: `${game.color}18`, border: `1px solid ${game.color}66`, color: game.color }}>
+          ▶ PLAY
+        </button>
       </div>
     </motion.div>
   )
@@ -292,18 +284,11 @@ function GameCardWide({ game, scores: s, navigate, delay }) {
           )}
         </div>
 
-        <div className="flex gap-2">
-          <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate(`/game/${game.id}/solo`)}
-            className="flex-1 py-2.5 rounded-xl font-orbitron text-xs font-bold tracking-wider"
-            style={{ background: `${game.color}18`, border: `1px solid ${game.color}`, color: game.color }}>
-            ▶ SOLO
-          </motion.button>
-          <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate(`/game/${game.id}/versus`)}
-            className="flex-1 py-2.5 rounded-xl font-orbitron text-xs font-bold tracking-wider"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.18)', color: '#aaa' }}>
-            ⚔ VS FRIEND
-          </motion.button>
-        </div>
+        <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate(`/game/${game.id}/solo`)}
+          className="w-full py-2.5 rounded-xl font-orbitron text-xs font-bold tracking-wider"
+          style={{ background: `${game.color}18`, border: `1px solid ${game.color}`, color: game.color }}>
+          ▶ PLAY SOLO
+        </motion.button>
       </div>
     </motion.div>
   )

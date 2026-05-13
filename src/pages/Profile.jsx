@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useUser, ACHIEVEMENTS, getLevel, getLevelPct, getXpToNext, XP_PER_LEVEL } from '../context/UserContext'
+import { useUser, getLevel, getLevelPct, getXpToNext, XP_PER_LEVEL } from '../context/UserContext'
 import { GAME_LIST } from '../games/gameRegistry'
 
 function timeAgo(ts) {
@@ -19,7 +19,7 @@ const GAME_ICON  = { trivia: '🧠', wordle: '🔤', crossword: '✏️', wordse
 const GAME_NAME  = { trivia: 'TRIVIA', wordle: 'WORDLE', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS' }
 
 export default function Profile() {
-  const { user, scores, matchHistory, achievements, deleteAccount, signOut } = useUser()
+  const { user, scores, matchHistory, deleteAccount, signOut } = useUser()
   const navigate = useNavigate()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteInput,     setDeleteInput]     = useState('')
@@ -45,10 +45,10 @@ export default function Profile() {
   const pct       = getLevelPct(xp)
   const toNext    = getXpToNext(xp)
   const joinDate  = new Date(user.joinedAt).toLocaleDateString('en', { month: 'short', year: 'numeric' })
-  const totalPlays = Object.values(scores).reduce((a, s) => a + s.plays, 0)
-  const totalWins  = Object.values(scores).reduce((a, s) => a + (s.wins  || 0), 0)
-  const totalLoss  = Object.values(scores).reduce((a, s) => a + (s.losses || 0), 0)
-  const achievSet  = new Set(achievements)
+  const totalPlays  = Object.values(scores).reduce((a, s) => a + s.plays, 0)
+  const totalWins   = Object.values(scores).reduce((a, s) => a + (s.wins   || 0), 0)
+  const totalLoss   = Object.values(scores).reduce((a, s) => a + (s.losses || 0), 0)
+  const winRate     = totalWins + totalLoss > 0 ? Math.round((totalWins / (totalWins + totalLoss)) * 100) : 0
 
   return (
     <div className="min-h-screen pb-24 px-4 pt-6 relative overflow-hidden">
@@ -106,51 +106,21 @@ export default function Profile() {
         )}
 
         {/* Quick stats */}
-        <div className="grid grid-cols-3 gap-3 mt-4 pt-4"
+        <div className="grid grid-cols-4 gap-2 mt-4 pt-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           {[
-            { label: 'PLAYED', value: totalPlays, color: '#00f5ff' },
-            { label: 'VS WINS', value: totalWins,  color: '#ffd700' },
-            { label: 'VS LOSS', value: totalLoss,  color: '#ff006e' },
+            { label: 'PLAYED',   value: totalPlays, color: '#00f5ff' },
+            { label: 'WINS',     value: totalWins,  color: '#00ff88' },
+            { label: 'LOSSES',   value: totalLoss,  color: '#ff006e' },
+            { label: 'WIN RATE', value: `${winRate}%`, color: '#ffd700' },
           ].map(s => (
             <div key={s.label} className="text-center">
-              <p className="font-orbitron text-xl font-black" style={{ color: s.color }}>{s.value}</p>
-              <p className="font-rajdhani text-[10px] text-gray-500">{s.label}</p>
+              <p className="font-orbitron text-lg font-black" style={{ color: s.color }}>{s.value}</p>
+              <p className="font-rajdhani text-[9px] text-gray-500">{s.label}</p>
             </div>
           ))}
         </div>
       </motion.div>
-
-      {/* ── Achievements ── */}
-      <div className="relative z-10 mb-5">
-        <SectionTitle text={`ACHIEVEMENTS (${achievements.length}/${ACHIEVEMENTS.length})`} />
-        <div className="grid grid-cols-3 gap-2">
-          {ACHIEVEMENTS.map((a, i) => {
-            const unlocked = achievSet.has(a.id)
-            return (
-              <motion.div key={a.id}
-                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.04 }}
-                className="rounded-2xl p-3 text-center"
-                style={{
-                  background: unlocked ? 'rgba(0,245,255,0.06)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${unlocked ? 'rgba(0,245,255,0.25)' : 'rgba(255,255,255,0.05)'}`,
-                  opacity: unlocked ? 1 : 0.4,
-                }}>
-                <div className="text-2xl mb-1">{a.icon}</div>
-                <p className="font-orbitron text-[9px] font-bold leading-tight"
-                  style={{ color: unlocked ? '#00f5ff' : '#444' }}>
-                  {a.name}
-                </p>
-                <p className="font-rajdhani text-[9px] text-gray-600 mt-0.5 leading-tight">{a.desc}</p>
-                {unlocked && (
-                  <p className="font-orbitron text-[9px] mt-1" style={{ color: '#ffd700' }}>+{a.xp} XP</p>
-                )}
-              </motion.div>
-            )
-          })}
-        </div>
-      </div>
 
       {/* ── Game Stats ── */}
       <div className="relative z-10 mb-5">
@@ -171,7 +141,7 @@ export default function Profile() {
                 <div className="flex-1">
                   <p className="font-orbitron text-xs font-bold" style={{ color: s ? g.color : '#444' }}>{g.label}</p>
                   {s ? (
-                    <p className="font-rajdhani text-[10px] text-gray-500">{s.plays} plays · VS: {s.wins || 0}W {s.losses || 0}L</p>
+                    <p className="font-rajdhani text-[10px] text-gray-500">{s.plays} played · {s.wins || 0}W {s.losses || 0}L battle</p>
                   ) : (
                     <p className="font-rajdhani text-[10px] text-gray-600">Not played yet</p>
                   )}
@@ -289,7 +259,7 @@ function DeleteModal({ input, setInput, error, loading, onConfirm, onClose }) {
           DELETE ACCOUNT
         </h3>
         <p className="font-rajdhani text-sm text-gray-400 text-center mb-4 leading-relaxed">
-          This permanently deletes your profile, scores, achievements and match history.
+          This permanently deletes your profile, scores, and match history.
           <span className="text-white font-bold"> This cannot be undone.</span>
         </p>
 
