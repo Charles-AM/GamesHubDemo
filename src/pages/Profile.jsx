@@ -147,8 +147,8 @@ export default function Profile() {
                 transition={{ delay: i * 0.06 }}
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl"
                 style={{
-                  background: s ? g.gradient : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${s ? g.border : 'rgba(255,255,255,0.06)'}`,
+                  background: s ? g.gradient : 'var(--surf-1)',
+                  border: `1px solid ${s ? g.border : 'var(--bdr-1)'}`,
                 }}>
                 <span className="text-2xl">{g.icon}</span>
                 <div className="flex-1">
@@ -290,8 +290,8 @@ function DeleteModal({ input, setInput, error, loading, onConfirm, onClose }) {
         <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={loading}
           className="w-full py-3 rounded-xl font-orbitron text-sm font-bold tracking-widest mb-2"
           style={{
-            background: input === 'DELETE' ? 'rgba(255,0,110,0.15)' : 'rgba(255,255,255,0.03)',
-            border: `1px solid ${input === 'DELETE' ? '#ff006e' : 'rgba(255,255,255,0.1)'}`,
+            background: input === 'DELETE' ? 'rgba(255,0,110,0.15)' : 'var(--surf-1)',
+            border: `1px solid ${input === 'DELETE' ? '#ff006e' : 'var(--bdr-2)'}`,
             color: input === 'DELETE' ? '#ff006e' : '#444',
           }}>
           {loading ? 'DELETING...' : '🗑 DELETE MY ACCOUNT'}

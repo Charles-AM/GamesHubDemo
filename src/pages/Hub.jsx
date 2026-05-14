@@ -179,7 +179,7 @@ export default function Hub() {
                 )}
               </div>
               <p className="font-orbitron text-sm font-black"
-                style={{ color: dailyDone ? '#555' : '#fff' }}>
+                style={{ color: dailyDone ? 'var(--txt-3)' : 'var(--txt-1)' }}>
                 {dailyGame.label}
               </p>
             </div>

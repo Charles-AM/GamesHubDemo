@@ -276,8 +276,8 @@ export default function UserSetup() {
                   <button key={a} onClick={() => setAvatar(a)}
                     className="text-2xl rounded-xl p-1.5 transition-all"
                     style={{
-                      background: avatar === a ? 'rgba(0,245,255,0.2)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${avatar === a ? 'rgba(0,245,255,0.6)' : 'rgba(255,255,255,0.08)'}`,
+                      background: avatar === a ? 'rgba(0,245,255,0.2)' : 'var(--surf-2)',
+                      border: `1px solid ${avatar === a ? 'rgba(0,245,255,0.6)' : 'var(--bdr-1)'}`,
                       transform: avatar === a ? 'scale(1.15)' : 'scale(1)',
                     }}>
                     {a}
@@ -288,7 +288,7 @@ export default function UserSetup() {
 
             {/* Preview + name */}
             <div className="flex items-center gap-4 mb-4 p-3 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              style={{ background: 'var(--surf-1)', border: '1px solid var(--bdr-2)' }}>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
                 style={{ background: 'rgba(0,245,255,0.08)', border: '2px solid rgba(0,245,255,0.3)' }}>
                 {avatar}
