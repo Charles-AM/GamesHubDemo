@@ -58,6 +58,7 @@ export default function GameRoom() {
   const [showNextPicker, setShowNextPicker] = useState(false)
   const [nextGameChoice, setNextGameChoice] = useState(() => GAME_LIST[0]?.id || 'pong')
   const [showQuitConfirm, setShowQuitConfirm] = useState(false)
+  const [waitingTooLong,  setWaitingTooLong]  = useState(false)
 
   const channelRef    = useRef(null)
   const rewardRef     = useRef(false)
@@ -65,6 +66,13 @@ export default function GameRoom() {
   const screenRef     = useRef('menu')
 
   useEffect(() => { screenRef.current = screen }, [screen])
+
+  // If stuck on waiting screen for 90s, show escape hatch
+  useEffect(() => {
+    if (screen !== 'waiting') { setWaitingTooLong(false); return }
+    const t = setTimeout(() => setWaitingTooLong(true), 90_000)
+    return () => clearTimeout(t)
+  }, [screen])
 
   const subscribeToRoom = useCallback((roomId) => {
     channelRef.current?.unsubscribe()
@@ -257,7 +265,7 @@ export default function GameRoom() {
     roundSavedRef.current = false; setCopied(false)
     setRounds([]); setSeriesScore({ me: 0, opp: 0, draws: 0 })
     setSeriesOver(false); setSeriesChampion(null)
-    setShowNextPicker(false); setShowQuitConfirm(false)
+    setShowNextPicker(false); setShowQuitConfirm(false); setWaitingTooLong(false)
     setScreen('create')
   }
 
@@ -265,6 +273,16 @@ export default function GameRoom() {
     if (!room) { goHome(); return }
     // 'abandoned' tells ALL clients to go home — not just the forfeiter
     await supabase.from('rooms').update({ status: 'abandoned' }).eq('id', room.id)
+    sessionStorage.removeItem('arcadia_room')
+    channelRef.current?.unsubscribe()
+    navigate('/hub')
+  }
+
+  const leaveRoom = async () => {
+    // If a game is in progress or lobby is live, mark abandoned so both players exit
+    if (room && ['waiting', 'guest_ready', 'playing', 'lobby'].includes(room.status)) {
+      await supabase.from('rooms').update({ status: 'abandoned' }).eq('id', room.id)
+    }
     sessionStorage.removeItem('arcadia_room')
     channelRef.current?.unsubscribe()
     navigate('/hub')
@@ -590,7 +608,7 @@ export default function GameRoom() {
               )
             )}
 
-            <button onClick={goHome}
+            <button onClick={leaveRoom}
               className="w-full py-2.5 rounded-xl font-orbitron text-[10px] tracking-widest transition-colors flex items-center justify-center gap-2"
               style={{ border: '1px solid rgba(255,0,110,0.2)', color: 'rgba(255,0,110,0.4)' }}
               onMouseEnter={e => { e.currentTarget.style.color='#ff006e'; e.currentTarget.style.borderColor='rgba(255,0,110,0.5)' }}
@@ -732,7 +750,7 @@ export default function GameRoom() {
               </div>
             </div>
 
-            <GameComp onFinish={handleGameFinish} />
+            <GameComp onFinish={handleGameFinish} difficulty="medium" />
 
             <div className="px-4 pb-3 pt-1">
               <button onClick={() => setShowQuitConfirm(true)}
@@ -780,6 +798,30 @@ export default function GameRoom() {
                 <PulsingDots color="#bf00ff" />
                 <p className="font-orbitron text-[9px] text-gray-600 tracking-widest mt-3">STILL PLAYING...</p>
               </div>
+
+              {/* Escape hatch if stuck too long */}
+              {waitingTooLong && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 rounded-2xl p-4 text-center"
+                  style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.25)' }}>
+                  <p className="font-rajdhani text-xs text-gray-500 mb-3">Taking longer than expected...</p>
+                  <div className="flex gap-2">
+                    <button onClick={async () => {
+                      const { data } = await supabase.from('rooms').select('*').eq('id', room.id).maybeSingle()
+                      if (data) setRoom(data)
+                    }}
+                      className="flex-1 py-2.5 rounded-xl font-orbitron text-[10px] tracking-widest"
+                      style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.4)', color: '#ffd700' }}>
+                      CHECK STATUS
+                    </button>
+                    <button onClick={goHome}
+                      className="py-2.5 px-4 rounded-xl font-orbitron text-[10px]"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#444' }}>
+                      LEAVE
+                    </button>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )
         })()}
@@ -1109,17 +1151,21 @@ export default function GameRoom() {
                   </div>
                 )
               ) : (
-                <div className="flex gap-3">
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className="font-rajdhani text-xs text-gray-600">
-                      {seriesOver ? 'Series complete' : 'Waiting for host...'}
-                    </p>
+                <div className="flex flex-col gap-2">
+                  {!seriesOver && (
+                    <div className="py-3 rounded-xl text-center"
+                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <p className="font-rajdhani text-xs text-gray-600">Waiting for host to start next round...</p>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
+                      className="flex-1 py-3.5 rounded-2xl font-orbitron text-xs tracking-wider flex items-center justify-center gap-2"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#666' }}>
+                      <Icon name="home" size={14} color="#666" strokeWidth={1.5} />
+                      {seriesOver ? 'EXIT' : 'LEAVE SERIES'}
+                    </motion.button>
                   </div>
-                  <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
-                    className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#555' }}>
-                    <Icon name="home" size={15} color="#555" strokeWidth={1.5} />
-                  </motion.button>
                 </div>
               )}
             </motion.div>
