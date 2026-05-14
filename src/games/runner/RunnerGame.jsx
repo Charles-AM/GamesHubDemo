@@ -140,7 +140,14 @@ function drawBg(ctx, bgOffset, speed) {
   ctx.restore()
 }
 
-export default function RunnerGame({ onFinish }) {
+const RUNNER_DIFF = {
+  easy:   { baseSpeed: 3.2, maxSpeed:  8, spawnMin: 75,  spawnMax: 130 },
+  medium: { baseSpeed: 4.5, maxSpeed: 11, spawnMin: 55,  spawnMax: 110 },
+  hard:   { baseSpeed: 5.8, maxSpeed: 14, spawnMin: 38,  spawnMax:  85 },
+}
+
+export default function RunnerGame({ difficulty = 'medium' }) {
+  const dcfg = RUNNER_DIFF[difficulty] ?? RUNNER_DIFF.medium
   const { updateScore } = useUser()
   const navigate        = useNavigate()
   const canvasRef       = useRef(null)
@@ -244,7 +251,7 @@ export default function RunnerGame({ onFinish }) {
       }
 
       const elapsed  = (ts / 1000)
-      const speed    = Math.min(MAX_SPEED, BASE_SPEED + elapsed * 0.12)
+      const speed    = Math.min(dcfg.maxSpeed, dcfg.baseSpeed + elapsed * 0.12)
       lastTimeRef.current = ts
 
       // Score = distance
@@ -266,7 +273,7 @@ export default function RunnerGame({ onFinish }) {
       }
 
       // Spawn obstacles
-      const spawnGap = Math.max(55, 110 - elapsed * 1.2)
+      const spawnGap = Math.max(dcfg.spawnMin, dcfg.spawnMax - elapsed * 1.2)
       s.spawnTimer++
       if (s.spawnTimer >= spawnGap) {
         s.spawnTimer = 0
@@ -327,9 +334,8 @@ export default function RunnerGame({ onFinish }) {
     cancelAnimationFrame(rafRef.current)
     stateRef.current = null
     updateScore('runner', scoreRef.current)
-    if (onFinish) onFinish(scoreRef.current)
     setPhase('result')
-  }, [updateScore, onFinish])
+  }, [updateScore])
 
   if (phase === 'result') {
     return (

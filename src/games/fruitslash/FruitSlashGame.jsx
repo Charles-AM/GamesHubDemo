@@ -21,23 +21,30 @@ const FRUITS = [
 
 const BOMB = { emoji: '💣', color: '#ff006e', r: 22 }
 
+const SLASH_DIFF = {
+  easy:   { lives: 4, bombChance: 0.06, vyMin: -14, vyMax: -10 },
+  medium: { lives: 3, bombChance: 0.12, vyMin: -16, vyMax: -12 },
+  hard:   { lives: 2, bombChance: 0.20, vyMin: -19, vyMax: -14 },
+}
+
 function rand(min, max) { return Math.random() * (max - min) + min }
 
-export default function FruitSlashGame({ onFinish }) {
+export default function FruitSlashGame({ difficulty = 'medium' }) {
   const { updateScore } = useUser()
   const navigate        = useNavigate()
   const canvasRef       = useRef(null)
   const stateRef        = useRef(null)
   const rafRef          = useRef(null)
+  const dcfg            = SLASH_DIFF[difficulty] ?? SLASH_DIFF.medium
 
   const [phase,    setPhase]    = useState('playing')
   const [score,    setScore]    = useState(0)
-  const [lives,    setLives]    = useState(MAX_LIVES)
+  const [lives,    setLives]    = useState(dcfg.lives)
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION)
   const [combo,    setCombo]    = useState(0)
 
   const scoreRef   = useRef(0)
-  const livesRef   = useRef(MAX_LIVES)
+  const livesRef   = useRef(dcfg.lives)
   const timeRef    = useRef(GAME_DURATION)
   const comboRef   = useRef(0)
   const comboTimer = useRef(null)
@@ -47,9 +54,8 @@ export default function FruitSlashGame({ onFinish }) {
     cancelAnimationFrame(rafRef.current)
     stateRef.current = null
     updateScore('fruitslash', scoreRef.current)
-    if (onFinish) onFinish(scoreRef.current)
     setPhase('result')
-  }, [updateScore, onFinish])
+  }, [updateScore])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -68,14 +74,14 @@ export default function FruitSlashGame({ onFinish }) {
 
     const spawnFruit = () => {
       const s     = stateRef.current
-      const isBomb = Math.random() < 0.12
+      const isBomb = Math.random() < dcfg.bombChance
       const cfg   = isBomb ? BOMB : FRUITS[Math.floor(Math.random() * FRUITS.length)]
       const x     = rand(cfg.r + 20, W - cfg.r - 20)
 
       s.fruits.push({
         x, y: H + cfg.r,
         vx: rand(-1.8, 1.8),
-        vy: rand(-16, -12),
+        vy: rand(dcfg.vyMin, dcfg.vyMax),
         r: cfg.r,
         emoji: cfg.emoji,
         color: cfg.color,
@@ -358,7 +364,7 @@ export default function FruitSlashGame({ onFinish }) {
         stats={[
           { label: 'SCORE',     value: scoreRef.current },
           { label: 'SURVIVED',  value: `${GAME_DURATION - timeRef.current}s` },
-          { label: 'LIVES LEFT', value: `${livesRef.current}/${MAX_LIVES}` },
+          { label: 'LIVES LEFT', value: `${livesRef.current}/${dcfg.lives}` },
         ]}
         onPlayAgain={() => window.location.reload()}
         onHub={() => navigate('/hub')}
@@ -373,7 +379,7 @@ export default function FruitSlashGame({ onFinish }) {
       <div className="w-full flex items-center justify-between px-4 py-2" style={{ maxWidth: W }}>
         {/* Lives */}
         <div className="flex gap-1">
-          {Array.from({ length: MAX_LIVES }).map((_, i) => (
+          {Array.from({ length: dcfg.lives }).map((_, i) => (
             <span key={i} style={{ fontSize: 18, opacity: i < lives ? 1 : 0.15, filter: i < lives ? 'none' : 'grayscale(1)' }}>❤️</span>
           ))}
         </div>

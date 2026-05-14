@@ -100,7 +100,13 @@ function drawParticle(ctx, p) {
   ctx.restore()
 }
 
-export default function ShooterGame({ onFinish }) {
+const SHOOTER_DIFF = {
+  easy:   { lives: 4, spawnRate: 150, speedMult: 0.7 },
+  medium: { lives: 3, spawnRate: 120, speedMult: 1.0 },
+  hard:   { lives: 2, spawnRate:  85, speedMult: 1.4 },
+}
+
+export default function ShooterGame({ difficulty = 'medium' }) {
   const { updateScore } = useUser()
   const navigate        = useNavigate()
   const canvasRef       = useRef(null)
@@ -108,14 +114,15 @@ export default function ShooterGame({ onFinish }) {
   const rafRef          = useRef(null)
   const lastTimeRef     = useRef(null)
   const touchYRef       = useRef(null)
+  const cfg             = SHOOTER_DIFF[difficulty] ?? SHOOTER_DIFF.medium
 
   const [phase,  setPhase]  = useState('playing')
   const [score,  setScore]  = useState(0)
-  const [lives,  setLives]  = useState(3)
+  const [lives,  setLives]  = useState(cfg.lives)
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION)
 
   const scoreRef  = useRef(0)
-  const livesRef  = useRef(3)
+  const livesRef  = useRef(cfg.lives)
   const timeRef   = useRef(GAME_DURATION)
 
   // Init game state
@@ -136,7 +143,10 @@ export default function ShooterGame({ onFinish }) {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx    = canvas.getContext('2d')
+    livesRef.current = cfg.lives
+    setLives(cfg.lives)
     stateRef.current = initState()
+    stateRef.current.spawnRate = cfg.spawnRate
 
     let lastShot  = 0
     let lastTick  = 0
@@ -186,7 +196,7 @@ export default function ShooterGame({ onFinish }) {
         w: cfg.w, h: cfg.h,
         hp: cfg.hp, maxHp: cfg.hp,
         pts: cfg.pts, color: cfg.color,
-        speed: cfg.speed + prog * 0.8,
+        speed: (cfg.speed + prog * 0.8) * SHOOTER_DIFF[difficulty]?.speedMult ?? 1,
         tier,
         sine, sinePhase: rand(0, Math.PI * 2), originX: startX,
       })
@@ -352,9 +362,8 @@ export default function ShooterGame({ onFinish }) {
     cancelAnimationFrame(rafRef.current)
     stateRef.current = null
     updateScore('shooter', scoreRef.current)
-    if (onFinish) onFinish(scoreRef.current)
     setPhase('result')
-  }, [updateScore, onFinish])
+  }, [updateScore])
 
   // Touch: move ship by dragging
   const handleCanvasMove = useCallback((e) => {
@@ -376,7 +385,7 @@ export default function ShooterGame({ onFinish }) {
         color="cyan"
         stats={[
           { label: 'SURVIVED', value: `${GAME_DURATION - timeRef.current}s` },
-          { label: 'LIVES',    value: `${livesRef.current}/3` },
+          { label: 'LIVES',    value: `${livesRef.current}/${cfg.lives}` },
         ]}
         onPlayAgain={() => window.location.reload()}
         onHub={() => navigate('/hub')}
@@ -392,7 +401,7 @@ export default function ShooterGame({ onFinish }) {
         style={{ maxWidth: CANVAS_W }}>
         {/* Lives */}
         <div className="flex gap-1">
-          {[0,1,2].map(i => (
+          {Array.from({ length: cfg.lives }).map((_, i) => (
             <span key={i} style={{ fontSize: 18, opacity: i < lives ? 1 : 0.15 }}>🚀</span>
           ))}
         </div>

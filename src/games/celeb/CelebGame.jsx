@@ -858,6 +858,13 @@ const CELEBS = [
   },
 ]
 
+// ── Difficulty config ──────────────────────────────────────────────────────────
+const DIFF = {
+  easy:   { questionSec: 22, hintsShown: 0, autoReveal: true,  allowReveal: true,  bonusPts: 5,  streakAt: 3 },
+  medium: { questionSec: 13, hintsShown: 0, autoReveal: false, allowReveal: true,  bonusPts: 8,  streakAt: 3 },
+  hard:   { questionSec:  8, hintsShown: 0, autoReveal: false, allowReveal: false, bonusPts: 12, streakAt: 3 },
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const POINTS_BY_HINT = [10, 6, 3]   // pts for correct on hint 1, 2, 3
 const ROUNDS         = 10
@@ -886,26 +893,69 @@ function buildRounds() {
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
-export default function CelebGame({ onFinish }) {
+export default function CelebGame({ difficulty = 'medium' }) {
   const { updateScore } = useUser()
+  const cfg = DIFF[difficulty] ?? DIFF.medium
 
-  const [rounds,    setRounds]    = useState([])
-  const [qIdx,      setQIdx]      = useState(0)
-  const [hintIdx,   setHintIdx]   = useState(0)   // 0-2 (which hint is latest)
-  const [selected,  setSelected]  = useState(null)
-  const [result,    setResult]    = useState(null) // 'correct' | 'wrong'
-  const [total,     setTotal]     = useState(0)
-  const [screen,    setScreen]    = useState('game')
+  const [rounds,       setRounds]       = useState([])
+  const [qIdx,         setQIdx]         = useState(0)
+  const [hintIdx,      setHintIdx]      = useState(0)   // 0-2 (which hint is latest)
+  const [selected,     setSelected]     = useState(null)
+  const [result,       setResult]       = useState(null) // 'correct' | 'wrong'
+  const [total,        setTotal]        = useState(0)
+  const [screen,       setScreen]       = useState('game')
+  const [qTime,        setQTime]        = useState(cfg.questionSec)
+  const [streak,       setStreak]       = useState(0)
+  const [streakBanner, setStreakBanner] = useState(false)
+  const [speedFlash,   setSpeedFlash]   = useState(false)
 
-  const totalRef = useRef(0)
-  const busy     = useRef(false)
+  const totalRef  = useRef(0)
+  const streakRef = useRef(0)
+  const qTimeRef  = useRef(cfg.questionSec)
+  const busy      = useRef(false)
+  const doneRef   = useRef(false)
 
   useEffect(() => { setRounds(buildRounds()) }, [])
+
+  // ── Per-question countdown ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!rounds.length || screen !== 'game') return
+    qTimeRef.current = cfg.questionSec
+    setQTime(cfg.questionSec)
+    doneRef.current = false
+
+    const id = setInterval(() => {
+      if (busy.current || doneRef.current) return
+      qTimeRef.current -= 1
+      setQTime(qTimeRef.current)
+
+      // Easy mode: auto-reveal hints as time ticks
+      if (cfg.autoReveal) {
+        const half = Math.floor(cfg.questionSec / 2)
+        const third = Math.floor(cfg.questionSec / 3)
+        if (qTimeRef.current === half)   setHintIdx(h => Math.max(h, 1))
+        if (qTimeRef.current === third)  setHintIdx(h => Math.max(h, 2))
+      }
+
+      if (qTimeRef.current <= 0) {
+        // Timed out — advance as wrong
+        clearInterval(id)
+        busy.current = true
+        doneRef.current = true
+        streakRef.current = 0
+        setStreak(0)
+        setResult('timeout')
+        setTimeout(() => advanceRef.current(totalRef.current, qIdx + 1), 1300)
+      }
+    }, 1000)
+
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qIdx, rounds, screen])
 
   const advance = useCallback((newTotal, nextIdx) => {
     if (nextIdx >= ROUNDS) {
       updateScore?.('celeb', newTotal)
-      onFinish?.(newTotal)
       setScreen('results')
     } else {
       setQIdx(nextIdx)
@@ -913,26 +963,49 @@ export default function CelebGame({ onFinish }) {
       setSelected(null)
       setResult(null)
       busy.current = false
+      doneRef.current = false
     }
-  }, [updateScore, onFinish])
+  }, [updateScore])
+
+  // keep advance in a ref so the interval closure can call it without stale closure
+  const advanceRef = useRef(advance)
+  useEffect(() => { advanceRef.current = advance }, [advance])
 
   const handleAnswer = useCallback((name) => {
     if (busy.current || result) return
     busy.current = true
+    doneRef.current = true
 
-    const q    = rounds[qIdx]
+    const q       = rounds[qIdx]
     const correct = name === q.celeb.name
-    const pts  = correct ? POINTS_BY_HINT[hintIdx] : 0
+    const basePts = correct ? POINTS_BY_HINT[hintIdx] : 0
+    const isSpeed = qTimeRef.current > cfg.questionSec / 2   // answered in first half
+    const speedPts = (correct && isSpeed) ? cfg.bonusPts : 0
+    const pts = basePts + speedPts
 
     setSelected(name)
     setResult(correct ? 'correct' : 'wrong')
+
     if (correct) {
       totalRef.current += pts
       setTotal(totalRef.current)
+      streakRef.current += 1
+      setStreak(streakRef.current)
+      if (streakRef.current >= cfg.streakAt) {
+        setStreakBanner(true)
+        setTimeout(() => setStreakBanner(false), 1800)
+      }
+      if (speedPts > 0) {
+        setSpeedFlash(true)
+        setTimeout(() => setSpeedFlash(false), 900)
+      }
+    } else {
+      streakRef.current = 0
+      setStreak(0)
     }
 
-    setTimeout(() => advance(totalRef.current, qIdx + 1), 1400)
-  }, [rounds, qIdx, hintIdx, result, advance])
+    setTimeout(() => advanceRef.current(totalRef.current, qIdx + 1), 1400)
+  }, [rounds, qIdx, hintIdx, result, cfg])
 
   const revealHint = () => {
     if (hintIdx < 2 && !result) setHintIdx(h => h + 1)
@@ -971,10 +1044,11 @@ export default function CelebGame({ onFinish }) {
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-2">SCORING</p>
             {[
-              ['Correct on hint 1', '10 pts'],
-              ['Correct on hint 2', '6 pts'],
-              ['Correct on hint 3', '3 pts'],
-              ['Wrong answer', '0 pts'],
+              ['Correct on hint 1',     '10 pts'],
+              ['Correct on hint 2',     '6 pts'],
+              ['Correct on hint 3',     '3 pts'],
+              [`⚡ Speed bonus`,        `+${cfg.bonusPts} pts`],
+              ['Wrong / timed out',     '0 pts'],
             ].map(([label, pts]) => (
               <div key={label} className="flex justify-between mb-1">
                 <p className="font-rajdhani text-xs text-gray-400">{label}</p>
@@ -985,10 +1059,14 @@ export default function CelebGame({ onFinish }) {
 
           <button onClick={() => {
             totalRef.current = 0
+            streakRef.current = 0
+            qTimeRef.current = cfg.questionSec
             setTotal(0); setQIdx(0); setHintIdx(0)
             setSelected(null); setResult(null)
+            setStreak(0); setStreakBanner(false)
             setRounds(buildRounds()); setScreen('game')
             busy.current = false
+            doneRef.current = false
           }}
             className="w-full py-3 rounded-2xl font-orbitron text-xs tracking-widest"
             style={{ background: 'rgba(191,0,255,0.1)', border: '1px solid rgba(191,0,255,0.4)', color: '#bf00ff' }}>
@@ -1000,15 +1078,50 @@ export default function CelebGame({ onFinish }) {
   }
 
   if (!rounds.length) return null
-  const q   = rounds[qIdx]
-  const pct = POINTS_BY_HINT[hintIdx]
+  const q        = rounds[qIdx]
+  const pct      = POINTS_BY_HINT[hintIdx]
+  const timePct  = qTime / cfg.questionSec
+  const timeColor = timePct > 0.5 ? '#00ff88' : timePct > 0.25 ? '#ffd700' : '#ff006e'
+  const isUrgent  = qTime <= 3
 
   // ── Game screen ─────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col min-h-screen px-4 pb-24 pt-5 select-none">
 
+      {/* Streak banner */}
+      <AnimatePresence>
+        {streakBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0,   scale: 1    }}
+            exit={{    opacity: 0, y: -12, scale: 0.9  }}
+            className="fixed top-16 left-0 right-0 flex justify-center z-50 pointer-events-none">
+            <div className="font-orbitron text-sm font-black px-5 py-2 rounded-full"
+              style={{ background: 'rgba(255,80,0,0.9)', color: '#fff', boxShadow: '0 0 20px rgba(255,80,0,0.6)' }}>
+              🔥 {streakRef.current} IN A ROW!
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Speed flash */}
+      <AnimatePresence>
+        {speedFlash && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1   }}
+            exit={{    opacity: 0, scale: 1.1 }}
+            className="fixed top-28 left-0 right-0 flex justify-center z-50 pointer-events-none">
+            <div className="font-orbitron text-xs font-black px-4 py-1.5 rounded-full"
+              style={{ background: 'rgba(0,245,255,0.85)', color: '#000', boxShadow: '0 0 16px rgba(0,245,255,0.5)' }}>
+              ⚡ SPEED +{cfg.bonusPts}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-3">
         <div>
           <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">QUESTION</p>
           <p className="font-orbitron text-2xl font-black text-white">
@@ -1025,6 +1138,23 @@ export default function CelebGame({ onFinish }) {
             {pct}
           </p>
         </div>
+      </div>
+
+      {/* Per-question timer bar */}
+      <div className="mb-4 relative">
+        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <motion.div
+            animate={{ width: `${timePct * 100}%`, backgroundColor: timeColor }}
+            transition={{ duration: 0.4, ease: 'linear' }}
+            className="h-full rounded-full"
+          />
+        </div>
+        <motion.span
+          animate={{ color: isUrgent ? '#ff006e' : timeColor, scale: isUrgent ? [1,1.15,1] : 1 }}
+          transition={{ repeat: isUrgent ? Infinity : 0, duration: 0.5 }}
+          className="absolute right-0 -top-4 font-orbitron text-[10px]">
+          {qTime}s
+        </motion.span>
       </div>
 
       {/* Question card */}
@@ -1063,14 +1193,23 @@ export default function CelebGame({ onFinish }) {
             ))}
           </div>
 
-          {/* Reveal hint button */}
-          {!result && hintIdx < 2 && (
+          {/* Reveal hint button (hidden on hard difficulty) */}
+          {!result && hintIdx < 2 && cfg.allowReveal && (
             <motion.button whileTap={{ scale: 0.95 }} onClick={revealHint}
               className="mt-4 w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest transition-all"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#666' }}>
               REVEAL HINT {hintIdx + 2} &nbsp;
               <span style={{ color: '#444' }}>(-{POINTS_BY_HINT[hintIdx] - POINTS_BY_HINT[hintIdx + 1]} pts)</span>
             </motion.button>
+          )}
+
+          {/* Timeout feedback */}
+          {result === 'timeout' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="mt-3 text-center font-orbitron text-xs"
+              style={{ color: '#ff006e' }}>
+              ⏱ TIME UP — {q.celeb.name}
+            </motion.div>
           )}
         </motion.div>
       </AnimatePresence>
