@@ -1,4 +1,4 @@
-import AsteroidsGame  from './asteroids/AsteroidsGame'
+import PongGame       from './pong/PongGame'
 import HoopsGame      from './hoops/HoopsGame'
 import ArcheryGame    from './archery/ArcheryGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
@@ -11,14 +11,14 @@ import RunnerGame     from './runner/RunnerGame'
 import FruitSlashGame from './fruitslash/FruitSlashGame'
 
 export const GAME_REGISTRY = {
-  asteroids: {
-    id: 'asteroids', component: AsteroidsGame,
-    label: 'ASTEROID BLASTER', desc: 'Blast rocks, survive waves — how long can you last?',
-    tag: 'ACTION',
-    color: '#ff006e',
-    gradient: 'linear-gradient(135deg, rgba(255,0,110,0.2), rgba(180,0,80,0.15))',
-    border: 'rgba(255,0,110,0.45)',
-    glow: 'rgba(255,0,110,0.18)',
+  pong: {
+    id: 'pong', component: PongGame,
+    label: 'PONG VS AI', desc: 'First to 7 wins — rally the ball, read the AI, dominate',
+    tag: 'CLASSIC',
+    color: '#00f5ff',
+    gradient: 'linear-gradient(135deg, rgba(0,245,255,0.18), rgba(0,80,200,0.15))',
+    border: 'rgba(0,245,255,0.45)',
+    glow: 'rgba(0,245,255,0.18)',
   },
   hoops: {
     id: 'hoops', component: HoopsGame,

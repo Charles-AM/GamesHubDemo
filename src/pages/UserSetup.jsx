@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useUser, AVATARS } from '../context/UserContext'
+import { GameIcon, Icon } from '../components/Icons'
 
-const FLOATERS = ['🎮','🕹️','⚡','🏆','🎯','🌟','🔥','💥','🎲','👾']
+// Geometric particle positions (static, no emoji)
+const PARTICLES = [
+  { shape: 'diamond', top: '8%',  left: '6%',  color: '#00f5ff', size: 8,  delay: 0    },
+  { shape: 'ring',    top: '15%', left: '82%', color: '#bf00ff', size: 10, delay: 0.6  },
+  { shape: 'diamond', top: '35%', left: '90%', color: '#ff006e', size: 6,  delay: 1.1  },
+  { shape: 'ring',    top: '55%', left: '4%',  color: '#ffd700', size: 8,  delay: 0.3  },
+  { shape: 'diamond', top: '72%', left: '88%', color: '#00ff88', size: 7,  delay: 0.8  },
+  { shape: 'ring',    top: '85%', left: '12%', color: '#00f5ff', size: 9,  delay: 1.4  },
+  { shape: 'diamond', top: '22%', left: '48%', color: '#bf00ff', size: 5,  delay: 0.5  },
+  { shape: 'ring',    top: '65%', left: '55%', color: '#ff006e', size: 6,  delay: 1.0  },
+]
 
 // Rate limiting helpers — outside component so they don't recreate on every render
 const LIMIT_KEY        = 'arcadia_signin_attempts'
@@ -144,13 +155,21 @@ export default function UserSetup() {
         <div className="orb orb-pink"   style={{ top: '50%',   left: '40%'  }} />
       </div>
 
-      {/* Floating emojis */}
-      {FLOATERS.map((e, i) => (
-        <motion.div key={i} className="fixed text-2xl opacity-15 pointer-events-none select-none"
-          style={{ top: `${10 + (i * 9) % 78}%`, left: `${(i * 13) % 88}%` }}
-          animate={{ y: [0, -14, 0], rotate: [0, 8, -8, 0] }}
-          transition={{ duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}>
-          {e}
+      {/* Floating geometric particles */}
+      {PARTICLES.map((p, i) => (
+        <motion.div key={i} className="fixed pointer-events-none"
+          style={{ top: p.top, left: p.left, opacity: 0.18 }}
+          animate={{ y: [0, -12, 0], rotate: p.shape === 'diamond' ? [0, 180, 360] : [0, 0, 0], scale: [1, 1.15, 1] }}
+          transition={{ duration: 3.5 + i * 0.35, repeat: Infinity, ease: 'easeInOut', delay: p.delay }}>
+          {p.shape === 'diamond' ? (
+            <svg width={p.size * 2} height={p.size * 2} viewBox="0 0 12 12">
+              <polygon points="6,0 12,6 6,12 0,6" fill={p.color} />
+            </svg>
+          ) : (
+            <svg width={p.size * 2} height={p.size * 2} viewBox="0 0 12 12">
+              <circle cx="6" cy="6" r="4.5" fill="none" stroke={p.color} strokeWidth="1.5" />
+            </svg>
+          )}
         </motion.div>
       ))}
 
@@ -158,14 +177,17 @@ export default function UserSetup() {
       <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }}
         className="text-center mb-5 relative z-10">
         <div className="flex items-center justify-center gap-3 mb-1">
-          <span className="text-4xl">🕹️</span>
+          {/* Neon controller icon */}
+          <div style={{ filter: 'drop-shadow(0 0 8px #00f5ff)' }}>
+            <Icon name="controller" size={36} color="#00f5ff" strokeWidth={1.5} />
+          </div>
           <h1 className="font-orbitron text-4xl font-black tracking-wider"
             style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff, #ff006e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             ARCADIA
           </h1>
         </div>
         <h2 className="font-orbitron text-xl font-bold neon-text-purple tracking-[0.5em]">DUELS</h2>
-        <p className="font-rajdhani text-gray-500 mt-1 text-xs tracking-widest">10 GAMES · SOLO · BATTLE · DAILY</p>
+        <p className="font-rajdhani text-gray-500 mt-1 text-xs tracking-widest">10 ARCADE GAMES · BATTLE MODE · DAILY CHALLENGES</p>
       </motion.div>
 
       {/* Game showcase */}
@@ -174,23 +196,24 @@ export default function UserSetup() {
           transition={{ delay: 0.15 }}
           className="relative z-10 w-full max-w-sm mb-5">
 
-          {/* Scrolling game icons */}
+          {/* Scrolling game tiles */}
           <div className="flex gap-2 overflow-x-auto pb-1 mb-3 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
             {[
-              { icon: '🏠', label: 'WORD WALK',    color: '#00f5ff' },
-              { icon: '🛸', label: 'SHOOTER',       color: '#00f5ff' },
-              { icon: '🏃', label: 'RUNNER',        color: '#00ff88' },
-              { icon: '🍉', label: 'FRUIT SLASH',   color: '#ff006e' },
-              { icon: '🏹', label: 'ARCHERY',       color: '#ffd700' },
-              { icon: '🐍', label: 'SNAKE',         color: '#00ff88' },
-              { icon: '🌟', label: 'WHO AM I?',     color: '#bf00ff' },
-              { icon: '✏️', label: 'CROSSWORD',     color: '#ffd700' },
-              { icon: '🔍', label: 'WORD SEARCH',   color: '#ff006e' },
-              { icon: '🌍', label: 'FLAG FRENZY',   color: '#bf00ff' },
+              { id: 'pong',       label: 'PONG VS AI',   color: '#00f5ff' },
+              { id: 'hoops',      label: 'HOOP SHOTS',   color: '#ff8c00' },
+              { id: 'shooter',    label: 'SHOOTER',      color: '#00f5ff' },
+              { id: 'runner',     label: 'RUNNER',       color: '#00ff88' },
+              { id: 'fruitslash', label: 'FRUIT SLASH',  color: '#ff006e' },
+              { id: 'archery',    label: 'ARCHERY',      color: '#ffd700' },
+              { id: 'snake',      label: 'SNAKE',        color: '#00ff88' },
+              { id: 'celeb',      label: 'WHO AM I?',    color: '#bf00ff' },
+              { id: 'crossword',  label: 'CROSSWORD',    color: '#ffd700' },
+              { id: 'wordsearch', label: 'WORD SEARCH',  color: '#ff006e' },
+              { id: 'flags',      label: 'FLAG FRENZY',  color: '#bf00ff' },
             ].map(g => (
-              <div key={g.label} className="flex-shrink-0 flex flex-col items-center gap-1 px-2 py-2 rounded-xl"
-                style={{ background: `${g.color}10`, border: `1px solid ${g.color}33`, minWidth: 58 }}>
-                <span style={{ fontSize: 20 }}>{g.icon}</span>
+              <div key={g.id} className="flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-xl"
+                style={{ background: `${g.color}10`, border: `1px solid ${g.color}30`, minWidth: 62 }}>
+                <GameIcon id={g.id} size={20} color={g.color} strokeWidth={1.5} />
                 <p className="font-orbitron text-[7px] tracking-wider text-center leading-tight"
                   style={{ color: g.color }}>{g.label}</p>
               </div>
@@ -200,14 +223,14 @@ export default function UserSetup() {
           {/* Feature pills */}
           <div className="flex flex-wrap gap-2 justify-center">
             {[
-              { icon: '⭐', text: '10 GAMES', color: '#ffd700' },
-              { icon: '📈', text: 'DIFFICULTY SCALES', color: '#00ff88' },
-              { icon: '⚔️', text: 'REAL-TIME BATTLE', color: '#ff006e' },
-              { icon: '📅', text: 'DAILY CHALLENGE', color: '#bf00ff' },
+              { icon: 'controller', text: '10 GAMES',        color: '#ffd700' },
+              { icon: 'check',      text: '3 DIFFICULTIES',  color: '#00ff88' },
+              { icon: 'swords',     text: 'REAL-TIME BATTLE',color: '#ff006e' },
+              { icon: 'refresh',    text: 'DAILY CHALLENGE', color: '#bf00ff' },
             ].map(f => (
               <div key={f.text} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ background: `${f.color}0f`, border: `1px solid ${f.color}33` }}>
-                <span style={{ fontSize: 11 }}>{f.icon}</span>
+                <Icon name={f.icon} size={10} color={f.color} strokeWidth={2} />
                 <span className="font-orbitron text-[8px] tracking-widest" style={{ color: f.color }}>{f.text}</span>
               </div>
             ))}
@@ -249,7 +272,7 @@ export default function UserSetup() {
             <motion.button whileTap={{ scale: 0.96 }} onClick={handleSignIn} disabled={loading}
               className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold mb-3 transition-all"
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff' }}>
-              {loading ? 'LOADING...' : '⚡ ENTER THE ARENA'}
+              {loading ? 'LOADING...' : 'ENTER THE ARENA'}
             </motion.button>
 
             <div className="flex justify-between">
@@ -312,7 +335,7 @@ export default function UserSetup() {
             <motion.button whileTap={{ scale: 0.96 }} onClick={handleSignUp} disabled={loading}
               className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold mb-3"
               style={{ background: 'rgba(191,0,255,0.1)', border: '1px solid #bf00ff', color: loading ? '#555' : '#bf00ff' }}>
-              {loading ? 'CREATING...' : '🚀 CREATE ACCOUNT'}
+              {loading ? 'CREATING...' : 'CREATE ACCOUNT'}
             </motion.button>
 
             <button onClick={() => { setScreen('signin'); setError('') }}
@@ -386,7 +409,7 @@ export default function UserSetup() {
             <motion.button whileTap={{ scale: 0.96 }} onClick={handleCreateProfile} disabled={loading}
               className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold"
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff', boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
-              {loading ? 'SAVING...' : '⚡ ENTER THE ARENA'}
+              {loading ? 'SAVING...' : 'ENTER THE ARENA'}
             </motion.button>
 
             <button onClick={() => signOut()}
@@ -402,9 +425,12 @@ export default function UserSetup() {
           <motion.div key="confirm-email" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             className="relative z-10 w-full max-w-sm text-center">
 
-            <motion.div animate={{ rotate: [0, -10, 10, -10, 0] }}
+            <motion.div animate={{ rotate: [0, -8, 8, -8, 0] }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-6xl mb-5">📨</motion.div>
+              className="flex justify-center mb-5"
+              style={{ filter: 'drop-shadow(0 0 12px #00f5ff)' }}>
+              <Icon name="share" size={52} color="#00f5ff" strokeWidth={1.2} />
+            </motion.div>
 
             <h2 className="font-orbitron text-lg font-black neon-text-cyan mb-2">CHECK YOUR INBOX</h2>
             <p className="font-rajdhani text-sm text-gray-400 mb-2">
@@ -463,7 +489,7 @@ export default function UserSetup() {
             <motion.button whileTap={{ scale: 0.96 }} onClick={handleForgot} disabled={loading}
               className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold mb-3"
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff' }}>
-              {loading ? 'SENDING...' : '📧 SEND RESET LINK'}
+              {loading ? 'SENDING...' : 'SEND RESET LINK'}
             </motion.button>
 
             <button onClick={() => { setScreen('signin'); setError('') }}
@@ -478,7 +504,9 @@ export default function UserSetup() {
           <motion.div key="reset-sent" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             className="relative z-10 w-full max-w-sm text-center">
 
-            <div className="text-5xl mb-4">📬</div>
+            <div className="flex justify-center mb-4" style={{ filter: 'drop-shadow(0 0 10px #00f5ff)' }}>
+              <Icon name="share" size={44} color="#00f5ff" strokeWidth={1.2} />
+            </div>
             <h2 className="font-orbitron text-lg font-black neon-text-cyan mb-2">CHECK YOUR EMAIL</h2>
             <p className="font-rajdhani text-sm text-gray-400 mb-2">
               A password reset link has been sent to
@@ -501,7 +529,9 @@ export default function UserSetup() {
             className="relative z-10 w-full max-w-sm">
 
             <div className="text-center mb-5">
-              <div className="text-4xl mb-2">🔐</div>
+              <div className="flex justify-center mb-2" style={{ filter: 'drop-shadow(0 0 10px #00f5ff)' }}>
+                <Icon name="key" size={36} color="#00f5ff" strokeWidth={1.5} />
+              </div>
               <p className="font-orbitron text-xs text-gray-400 tracking-widest">✦ SET NEW PASSWORD ✦</p>
             </div>
 
@@ -521,7 +551,7 @@ export default function UserSetup() {
             <motion.button whileTap={{ scale: 0.96 }} onClick={handleNewPassword} disabled={loading}
               className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest font-bold"
               style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid #00f5ff', color: loading ? '#555' : '#00f5ff', boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
-              {loading ? 'SAVING...' : '⚡ SAVE NEW PASSWORD'}
+              {loading ? 'SAVING...' : 'SAVE NEW PASSWORD'}
             </motion.button>
           </motion.div>
         )}

@@ -153,17 +153,16 @@ const GAME_ICONS = {
     </>
   ),
 
-  asteroids: ({ c }) => (
+  pong: ({ c }) => (
     <>
-      {/* Lumpy asteroid rock */}
-      <path d="M9 3L14 2L19 5L21 10L19 16L15 20L9 21L4 18L2 13L3 8L7 4Z" />
-      {/* Crater dents */}
-      <path d="M8 9Q10 7 12 9" strokeWidth="1.2" />
-      <path d="M13 14Q15 12.5 16 14" strokeWidth="1.2" />
-      {/* Debris chips */}
-      <line x1="20" y1="3"  x2="22" y2="2"  strokeWidth="1.5" />
-      <line x1="22" y1="7"  x2="23.5" y2="6"  strokeWidth="1.5" />
-      <line x1="21" y1="11" x2="23"  y2="12" strokeWidth="1.5" />
+      {/* Center divider */}
+      <line x1="2" y1="12" x2="22" y2="12" strokeDasharray="3 3" strokeOpacity="0.4" />
+      {/* Top paddle (AI) */}
+      <rect x="7" y="3" width="10" height="3" rx="1.5" fill={c} stroke="none" opacity="0.6" />
+      {/* Bottom paddle (player) */}
+      <rect x="7" y="18" width="10" height="3" rx="1.5" fill={c} stroke="none" />
+      {/* Ball */}
+      <circle cx="15" cy="9" r="2.2" fill={c} stroke="none" />
     </>
   ),
 

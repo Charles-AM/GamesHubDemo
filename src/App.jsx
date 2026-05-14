@@ -14,7 +14,14 @@ const NAV_ROUTES = ['/hub', '/profile', '/room']
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <div className="text-4xl animate-pulse">🕹️</div>
+      <div className="animate-pulse" style={{ filter: 'drop-shadow(0 0 10px #00f5ff)' }}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00f5ff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="12" rx="4" />
+          <path d="M8 13V11M7 12H9" />
+          <circle cx="14" cy="11.5" r="1" fill="#00f5ff" stroke="none" />
+          <circle cx="17" cy="11.5" r="1" fill="#00f5ff" stroke="none" />
+        </svg>
+      </div>
       <p className="font-orbitron text-xs text-gray-500 tracking-widest animate-pulse">LOADING...</p>
     </div>
   )
