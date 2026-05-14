@@ -6,13 +6,30 @@ import { getLevel } from '../context/UserContext'
 const ADMIN_EMAIL = 'vmb4manager@gmail.com'
 
 const GAME_LABEL = {
-  mathblitz:  '⚡ Math Blitz',
+  pong:       '🏓 Pong',
+  soccer:     '⚽ Penalty Shootout',
+  whack:      '🔨 Whack-a-Mole',
+  shooter:    '🎯 Space Shooter',
+  runner:     '🏃 Neon Runner',
+  fruitslash: '🍉 Fruit Slash',
   archery:    '🏹 Archery',
+  snake:      '🐍 Snake',
+  celeb:      '🌟 Who Am I?',
   crossword:  '✏️ Crossword',
   wordsearch: '🔍 Word Search',
   flags:      '🌍 Flags',
-  snake:      '🐍 Snake',
-  celeb:      '🌟 Who Am I?',
+  // legacy
+  mathblitz:  '⚡ Math Blitz',
+  wordwalk:   '📝 Word Walk',
+}
+
+const ROOM_STATUS_LABEL = {
+  waiting:     { label: 'Waiting',    color: '#ffd700' },
+  guest_ready: { label: 'Ready',      color: '#00ff88' },
+  playing:     { label: 'Playing',    color: '#00f5ff' },
+  finished:    { label: 'Finished',   color: '#bf00ff' },
+  lobby:       { label: 'Lobby',      color: '#9ca3af' },
+  abandoned:   { label: 'Abandoned',  color: '#ff006e' },
 }
 
 function joinDate(ts) {
@@ -88,21 +105,26 @@ export default function Admin() {
   const [users,   setUsers]   = useState([])
   const [search,  setSearch]  = useState('')
   const [tab,     setTab]     = useState('overview')
+  const [rooms,   setRooms]   = useState([])
 
   const loadData = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [profilesRes, matchesRes, scoresRes] = await Promise.all([
+      const [profilesRes, matchesRes, scoresRes, roomsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('joined_at', { ascending: false }),
         supabase.from('matches').select('game, mode, won, played_at, user_id'),
         supabase.from('scores').select('user_id, plays'),
+        supabase.from('rooms').select('*').order('created_at', { ascending: false }).limit(50),
       ])
       if (profilesRes.error) throw profilesRes.error
       if (matchesRes.error)  throw matchesRes.error
+      // rooms errors are non-fatal — table may not exist yet
 
       const profiles = profilesRes.data || []
       const matches  = matchesRes.data  || []
       const scores   = scoresRes.data   || []
+      const roomData = roomsRes.data    || []
+      setRooms(roomData)
 
       // Per-user play totals
       const playsMap = {}
@@ -116,14 +138,17 @@ export default function Admin() {
       const gameBreakdown = {}
       for (const m of matches) gameBreakdown[m.game] = (gameBreakdown[m.game] || 0) + 1
 
+      const activeRooms = roomData.filter(r => ['waiting','guest_ready','playing','lobby'].includes(r.status))
       setStats({
-        totalUsers:   profiles.length,
-        totalGames:   matches.length,
-        todaySignups: profiles.filter(p => new Date(p.joined_at).toDateString() === today).length,
-        todayGames:   matches.filter(m => m.played_at && new Date(m.played_at).toDateString() === today).length,
-        weekSignups:  profiles.filter(p => new Date(p.joined_at).getTime() > last7ms).length,
-        weekGames:    matches.filter(m => m.played_at && new Date(m.played_at).getTime() > last7ms).length,
-        versusCount:  matches.filter(m => m.mode === 'versus').length,
+        totalUsers:    profiles.length,
+        totalGames:    matches.length,
+        todaySignups:  profiles.filter(p => new Date(p.joined_at).toDateString() === today).length,
+        todayGames:    matches.filter(m => m.played_at && new Date(m.played_at).toDateString() === today).length,
+        weekSignups:   profiles.filter(p => new Date(p.joined_at).getTime() > last7ms).length,
+        weekGames:     matches.filter(m => m.played_at && new Date(m.played_at).getTime() > last7ms).length,
+        versusCount:   matches.filter(m => m.mode === 'versus').length,
+        activeRooms:   activeRooms.length,
+        abandonedRooms: roomData.filter(r => r.status === 'abandoned').length,
         gameBreakdown,
       })
       setUsers(profiles.map(p => ({
@@ -194,7 +219,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <div className="relative z-10 flex gap-2 mb-5">
-        {['overview', 'users'].map(t => (
+        {['overview', 'users', 'rooms'].map(t => (
           <button key={t} onClick={() => setTab(t)}
             className="flex-1 py-2 rounded-xl font-orbitron text-[10px] tracking-widest transition-all"
             style={{
@@ -246,9 +271,10 @@ export default function Admin() {
             <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-4">LAST 7 DAYS</p>
             <div className="flex items-center justify-around">
               {[
-                { label: 'New users',     value: stats.weekSignups, color: '#00ff88' },
-                { label: 'Games played',  value: stats.weekGames,   color: '#bf00ff' },
+                { label: 'New users',     value: stats.weekSignups,  color: '#00ff88' },
+                { label: 'Games played',  value: stats.weekGames,    color: '#bf00ff' },
                 { label: 'Battle rounds', value: stats.versusCount,  color: '#ffd700' },
+                { label: 'Active rooms',  value: stats.activeRooms,  color: '#00f5ff' },
               ].map((s, i) => (
                 <div key={i} className="text-center">
                   <p className="font-orbitron text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
@@ -309,6 +335,56 @@ export default function Admin() {
               </div>
             </motion.div>
           )}
+        </div>
+      )}
+
+      {/* ── ROOMS TAB ── */}
+      {tab === 'rooms' && (
+        <div className="relative z-10 flex flex-col gap-3">
+          <p className="font-orbitron text-[9px] text-gray-600 tracking-widest">
+            {rooms.length} RECENT ROOMS
+          </p>
+          {rooms.length === 0 && !loading && (
+            <p className="font-rajdhani text-sm text-gray-600 text-center py-10">No rooms found</p>
+          )}
+          {rooms.map((r, i) => {
+            const statusInfo = ROOM_STATUS_LABEL[r.status] || { label: r.status, color: '#9ca3af' }
+            const createdAt  = r.created_at ? new Date(r.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }) : '—'
+            const hostScore  = r.host_score  ?? '—'
+            const guestScore = r.guest_score ?? '—'
+            return (
+              <motion.div key={r.id || i}
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: Math.min(i * 0.02, 0.3) }}
+                className="rounded-2xl px-4 py-3"
+                style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${statusInfo.color}22` }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-orbitron text-[10px] text-white">
+                    {r.code || r.id?.slice(0,8) || '—'}
+                  </span>
+                  <span className="font-orbitron text-[9px] px-2 py-0.5 rounded-full"
+                    style={{ background: `${statusInfo.color}20`, color: statusInfo.color }}>
+                    {statusInfo.label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-rajdhani text-[11px] text-gray-400">
+                      {GAME_LABEL[r.game] || r.game || '?'}
+                    </span>
+                  </div>
+                  <span className="font-rajdhani text-[10px] text-gray-600">
+                    {hostScore} – {guestScore} · {createdAt}
+                  </span>
+                </div>
+                {(r.host_name || r.guest_name) && (
+                  <div className="mt-1 font-rajdhani text-[10px] text-gray-600 truncate">
+                    {r.host_name || '?'} vs {r.guest_name || 'waiting…'}
+                  </div>
+                )}
+              </motion.div>
+            )
+          })}
         </div>
       )}
 
