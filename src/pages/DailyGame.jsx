@@ -77,11 +77,21 @@ export default function DailyGame({ gameId }) {
   return (
     <div className="relative">
       {/* Daily banner */}
-      <div className="flex items-center justify-center gap-2 py-2 px-4"
-        style={{ background: 'rgba(255,215,0,0.08)', borderBottom: '1px solid rgba(255,215,0,0.25)' }}>
+      <div className="flex items-center justify-between px-3"
+        style={{
+          height: 44,
+          background: 'rgba(255,215,0,0.06)',
+          borderBottom: '1px solid rgba(255,215,0,0.22)',
+        }}>
+        <button onClick={() => navigate('/hub')}
+          className="flex items-center gap-1.5 font-orbitron text-[10px] tracking-widest transition-colors"
+          style={{ color: '#9ca3af', minHeight: 'unset' }}>
+          <span style={{ fontSize: 13 }}>‹</span> HUB
+        </button>
         <span className="font-orbitron text-[10px] tracking-widest" style={{ color: '#ffd700' }}>
-          📅 DAILY CHALLENGE · {game.icon} {game.label} · 2× XP
+          📅 {game.label} · 2× XP
         </span>
+        <div style={{ width: 52 }} />
       </div>
       <GameComponent onFinish={handleFinish} />
     </div>
