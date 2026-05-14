@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
-const GAME_ICONS = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍' }
-const GAME_NAMES = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS', snake: 'SNAKE' }
+const GAME_ICONS = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
+const GAME_NAMES = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS', snake: 'SNAKE', celeb: 'WHO AM I?' }
 
 function timeAgo(ts) {
   const diff = Date.now() - ts
@@ -229,7 +229,8 @@ export default function Hub() {
                 {[
                   { icon: '⚡', name: 'MATH BLITZ', desc: 'Solve as many arithmetic equations as you can in 60 seconds. Pick the correct answer from 4 options. +10 for correct, –3 for wrong. Speed and accuracy win.' },
                   { icon: '🐍', name: 'SNAKE', desc: 'Guide your snake to eat food and grow longer — without hitting walls or your own tail. The snake gets faster as you eat more. You have 60 seconds.' },
-                  { icon: '🏹', name: 'ARCHERY', desc: 'Take 10 shots at the target. The crosshair moves on its own — tap or press Space to release your arrow. Wind shifts every shot and the wobble gets worse each round. Aim for the bullseye!' },
+                  { icon: '🏹', name: 'ARCHERY', desc: 'Pull the bowstring and aim your crosshair at the target — drag to aim, release to shoot. The longer you hold, the more your hand shakes. 10 shots, highest score wins.' },
+                  { icon: '🌟', name: 'WHO AM I?', desc: 'Guess the celebrity from cryptic clues across movies, sports, music and TV. Answer on the first hint for 10 pts, reveal more hints for 6 or 3 pts. 10 rounds — perfect for battle mode!' },
                   { icon: '✏️', name: 'CROSSWORD', desc: 'Fill in the grid using the clues. Complete words earn points. Finish the whole puzzle for a bonus.' },
                   { icon: '🔍', name: 'WORD SEARCH', desc: 'Find all the hidden words in the grid before time runs out. Words go in any direction. Tap the first and last letter of each word.' },
                   { icon: '🌍', name: 'FLAG FRENZY', desc: 'Identify the country from its flag. 10 rounds, 4 choices each. Fast correct answers give bonus points.' },

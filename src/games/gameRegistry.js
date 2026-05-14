@@ -4,6 +4,7 @@ import WordSearchGame from './wordsearch/WordSearchGame'
 import CrosswordGame  from './crossword/CrosswordGame'
 import FlagGame       from './flags/FlagGame'
 import SnakeGame      from './snake/SnakeGame'
+import CelebGame      from './celeb/CelebGame'
 
 export const GAME_REGISTRY = {
   mathblitz: {
@@ -59,6 +60,15 @@ export const GAME_REGISTRY = {
     gradient: 'linear-gradient(135deg, rgba(0,255,136,0.18), rgba(0,160,80,0.12))',
     border: 'rgba(0,255,136,0.45)',
     glow: 'rgba(0,255,136,0.18)',
+  },
+  celeb: {
+    id: 'celeb', component: CelebGame,
+    label: 'WHO AM I?', desc: 'Guess the celebrity from clues — movies, sports, music & more',
+    icon: '🌟', tag: 'TRIVIA',
+    color: '#bf00ff',
+    gradient: 'linear-gradient(135deg, rgba(191,0,255,0.2), rgba(80,0,180,0.15))',
+    border: 'rgba(191,0,255,0.45)',
+    glow: 'rgba(191,0,255,0.18)',
   },
 }
 

@@ -12,6 +12,7 @@ const GAME_LABEL = {
   wordsearch: '🔍 Word Search',
   flags:      '🌍 Flags',
   snake:      '🐍 Snake',
+  celeb:      '🌟 Who Am I?',
 }
 
 function joinDate(ts) {

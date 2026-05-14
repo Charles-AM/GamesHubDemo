@@ -15,8 +15,8 @@ function timeAgo(ts) {
 }
 
 const MODE_LABEL = { solo: '▶ SOLO', versus: '⚔ VS', daily: '📅 DAILY' }
-const GAME_ICON  = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍' }
-const GAME_NAME  = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS', snake: 'SNAKE' }
+const GAME_ICON  = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
+const GAME_NAME  = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS', snake: 'SNAKE', celeb: 'WHO AM I?' }
 
 export default function Profile() {
   const { user, scores, matchHistory, deleteAccount, signOut } = useUser()
