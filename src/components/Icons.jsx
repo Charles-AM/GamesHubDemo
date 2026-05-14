@@ -152,6 +152,40 @@ const GAME_ICONS = {
       <path d="M4 3Q8 5.5 12 3Q16 .5 20 3V13Q16 15.5 12 13Q8 10.5 4 13V3Z" />
     </>
   ),
+
+  asteroids: ({ c }) => (
+    <>
+      {/* Lumpy asteroid rock */}
+      <path d="M9 3L14 2L19 5L21 10L19 16L15 20L9 21L4 18L2 13L3 8L7 4Z" />
+      {/* Crater dents */}
+      <path d="M8 9Q10 7 12 9" strokeWidth="1.2" />
+      <path d="M13 14Q15 12.5 16 14" strokeWidth="1.2" />
+      {/* Debris chips */}
+      <line x1="20" y1="3"  x2="22" y2="2"  strokeWidth="1.5" />
+      <line x1="22" y1="7"  x2="23.5" y2="6"  strokeWidth="1.5" />
+      <line x1="21" y1="11" x2="23"  y2="12" strokeWidth="1.5" />
+    </>
+  ),
+
+  hoops: ({ c }) => (
+    <>
+      {/* Backboard */}
+      <rect x="17" y="2" width="5" height="7" rx="0.5" />
+      {/* Pole */}
+      <line x1="19.5" y1="9" x2="19.5" y2="22" />
+      {/* Arm */}
+      <line x1="17" y1="5.5" x2="13" y2="5.5" />
+      {/* Rim */}
+      <path d="M6 6h14" />
+      {/* Net */}
+      <path d="M6 6Q6 12 10 14Q14 12 20 6" strokeWidth="1.2" />
+      <line x1="13" y1="6" x2="12" y2="14" strokeWidth="1.2" />
+      {/* Ball */}
+      <circle cx="5" cy="18" r="4" />
+      <path d="M2 18q3-3 6 0" strokeWidth="1" />
+      <path d="M1.5 15.5Q5 14 8.5 15.5" strokeWidth="1" />
+    </>
+  ),
 }
 
 export function GameIcon({ id, size = 24, color = 'currentColor', strokeWidth = 1.5, className }) {

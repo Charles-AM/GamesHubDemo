@@ -8,9 +8,16 @@ import { GameIcon, DiffIcon } from '../components/Icons'
 
 export default function GamePage() {
   const { gameId, mode } = useParams()
-  const { user }         = useUser()
-  const navigate         = useNavigate()
+  const { user, recordGame } = useUser()
+  const navigate             = useNavigate()
   const [difficulty, setDifficulty] = useState(null)
+
+  const handleQuit = () => {
+    if (difficulty) {
+      recordGame?.({ game: gameId, score: 0, mode: 'solo', won: false })
+    }
+    navigate('/hub')
+  }
 
   if (!GAME_REGISTRY[gameId]) return <Navigate to="/hub" />
   if (mode === 'daily') return <DailyGame gameId={gameId} />
@@ -32,7 +39,7 @@ export default function GamePage() {
           borderBottom: '1px solid rgba(255,255,255,0.07)',
           backdropFilter: 'blur(12px)',
         }}>
-        <button onClick={() => navigate('/hub')}
+        <button onClick={handleQuit}
           className="flex items-center gap-1.5 font-orbitron text-[10px] tracking-widest transition-colors"
           style={{ color: '#9ca3af', minHeight: 'unset' }}>
           <span style={{ fontSize: 13 }}>‹</span> HUB

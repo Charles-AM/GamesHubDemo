@@ -1,4 +1,5 @@
-import WordWalkGame   from './wordwalk/WordWalkGame'
+import AsteroidsGame  from './asteroids/AsteroidsGame'
+import HoopsGame      from './hoops/HoopsGame'
 import ArcheryGame    from './archery/ArcheryGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
 import CrosswordGame  from './crossword/CrosswordGame'
@@ -10,14 +11,23 @@ import RunnerGame     from './runner/RunnerGame'
 import FruitSlashGame from './fruitslash/FruitSlashGame'
 
 export const GAME_REGISTRY = {
-  wordwalk: {
-    id: 'wordwalk', component: WordWalkGame,
-    label: 'WORD WALK', desc: 'Complete words to walk your character home — first to arrive wins',
-    icon: '🏠', tag: 'WORDS',
-    color: '#00f5ff',
-    gradient: 'linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,80,255,0.15))',
-    border: 'rgba(0,245,255,0.45)',
-    glow: 'rgba(0,245,255,0.18)',
+  asteroids: {
+    id: 'asteroids', component: AsteroidsGame,
+    label: 'ASTEROID BLASTER', desc: 'Blast rocks, survive waves — how long can you last?',
+    tag: 'ACTION',
+    color: '#ff006e',
+    gradient: 'linear-gradient(135deg, rgba(255,0,110,0.2), rgba(180,0,80,0.15))',
+    border: 'rgba(255,0,110,0.45)',
+    glow: 'rgba(255,0,110,0.18)',
+  },
+  hoops: {
+    id: 'hoops', component: HoopsGame,
+    label: 'HOOP SHOTS', desc: 'Drag to aim, release to shoot — sink as many baskets as you can',
+    tag: 'SPORT',
+    color: '#ff8c00',
+    gradient: 'linear-gradient(135deg, rgba(255,140,0,0.2), rgba(200,80,0,0.15))',
+    border: 'rgba(255,140,0,0.45)',
+    glow: 'rgba(255,140,0,0.18)',
   },
   shooter: {
     id: 'shooter', component: ShooterGame,
