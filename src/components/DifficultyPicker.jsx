@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion'
+import { GameIcon, DiffIcon } from './Icons'
 
 const TIERS = [
   {
     key:   'easy',
-    icon:  '🌱',
     label: 'ROOKIE',
     badge: 'PERFECT FOR KIDS',
     desc:  'More time · simpler challenges · chill vibes',
@@ -13,7 +13,6 @@ const TIERS = [
   },
   {
     key:   'medium',
-    icon:  '⚡',
     label: 'CHALLENGER',
     badge: 'RECOMMENDED',
     desc:  'Balanced difficulty · the classic experience',
@@ -23,7 +22,6 @@ const TIERS = [
   },
   {
     key:   'hard',
-    icon:  '💀',
     label: 'VETERAN',
     badge: 'NO MERCY',
     desc:  'Less time · harder content · for the brave',
@@ -46,7 +44,12 @@ export default function DifficultyPicker({ game, onSelect }) {
       {/* Game identity */}
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8 relative z-10">
-        <div className="text-5xl mb-2">{game.icon}</div>
+        <div className="flex items-center justify-center mb-3">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{ background: `${game.color}15`, border: `1px solid ${game.color}40` }}>
+            <GameIcon id={game.id} size={32} color={game.color} strokeWidth={1.5} />
+          </div>
+        </div>
         <p className="font-orbitron text-xs text-gray-500 tracking-widest mb-1">{game.label}</p>
         <h2 className="font-orbitron text-xl font-black text-white">SELECT DIFFICULTY</h2>
       </motion.div>
@@ -69,9 +72,9 @@ export default function DifficultyPicker({ game, onSelect }) {
             }}>
 
             {/* Icon */}
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{ background: `${tier.color}18`, border: `1px solid ${tier.color}44` }}>
-              {tier.icon}
+              <DiffIcon level={tier.key} size={24} color={tier.color} strokeWidth={1.8} />
             </div>
 
             {/* Text */}
@@ -88,8 +91,12 @@ export default function DifficultyPicker({ game, onSelect }) {
               <p className="font-rajdhani text-xs text-gray-400">{tier.desc}</p>
             </div>
 
-            {/* Arrow */}
-            <span className="font-orbitron text-lg flex-shrink-0" style={{ color: tier.color }}>›</span>
+            {/* Arrow chevron */}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+              stroke={tier.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="flex-shrink-0">
+              <path d="M4 2l4 4-4 4" />
+            </svg>
           </motion.button>
         ))}
       </div>

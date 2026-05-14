@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Icon } from './Icons'
 
 const C = {
   cyan:   { neon: 'neon-text-cyan',   border: '1px solid rgba(0,245,255,0.4)',   color: '#00f5ff' },
@@ -9,9 +10,9 @@ const C = {
 }
 
 const OUTCOMES = {
-  win:  { label: 'VICTORY',  cls: 'neon-text-green' },
-  lose: { label: 'DEFEATED', cls: 'neon-text-pink'  },
-  draw: { label: 'DRAW',     cls: 'neon-text-gold'  },
+  win:  { label: 'VICTORY',  cls: 'neon-text-green', color: '#00ff88' },
+  lose: { label: 'DEFEATED', cls: 'neon-text-pink',  color: '#ff006e' },
+  draw: { label: 'DRAW',     cls: 'neon-text-gold',  color: '#ffd700' },
 }
 
 export default function ResultScreen({
@@ -23,7 +24,7 @@ export default function ResultScreen({
   const o = outcome ? OUTCOMES[outcome] : null
 
   const handleShare = () => {
-    const txt = shareText || `I scored ${score} in ${game} on ArcadiaDuels! 🎮 Can you beat it?`
+    const txt = shareText || `I scored ${score} in ${game} on ArcadiaDuels! Can you beat it?`
     navigator.clipboard?.writeText(txt).catch(() => {})
   }
 
@@ -35,11 +36,13 @@ export default function ResultScreen({
         <p className="font-orbitron text-[10px] text-gray-500 tracking-widest text-center mb-3">{game}</p>
 
         {o && (
-          <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className={`font-orbitron text-4xl font-black text-center mb-4 ${o.cls}`}>
-            {o.label}
-          </motion.p>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }} className="flex items-center justify-center gap-2 mb-5">
+            {outcome === 'win' && (
+              <Icon name="trophy" size={28} color={o.color} strokeWidth={1.5} />
+            )}
+            <p className={`font-orbitron text-4xl font-black ${o.cls}`}>{o.label}</p>
+          </motion.div>
         )}
 
         {/* Score */}
@@ -67,9 +70,11 @@ export default function ResultScreen({
         {/* Share */}
         <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
           whileTap={{ scale: 0.95 }} onClick={handleShare}
-          className="w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest mb-4 transition-all"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#666' }}>
-          📋 COPY SCORE TO SHARE
+          className="w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest mb-4 transition-all
+                     flex items-center justify-center gap-2"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#555' }}>
+          <Icon name="share" size={12} color="#555" />
+          COPY SCORE TO SHARE
         </motion.button>
 
         {/* Buttons */}

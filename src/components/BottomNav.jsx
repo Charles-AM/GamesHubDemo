@@ -1,13 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { NavIcon } from './Icons'
 
 const TABS = [
-  { path: '/hub',     icon: '🎮', label: 'HUB'     },
-  { path: '/room',    icon: '⚔️', label: 'BATTLE'   },
-  { path: '/profile', icon: '👤', label: 'PROFILE'  },
+  { path: '/hub',     icon: 'hub',     label: 'HUB'    },
+  { path: '/room',    icon: 'battle',  label: 'BATTLE'  },
+  { path: '/profile', icon: 'profile', label: 'PROFILE' },
 ]
 
 export default function BottomNav() {
-  const navigate  = useNavigate()
+  const navigate     = useNavigate()
   const { pathname } = useLocation()
 
   return (
@@ -23,19 +24,23 @@ export default function BottomNav() {
         }}>
         {TABS.map(tab => {
           const active = pathname === tab.path
+          const color  = active ? '#00f5ff' : '#3a3a4a'
           return (
             <button key={tab.path} onClick={() => navigate(tab.path)}
-              className="flex-1 flex flex-col items-center py-3 gap-1 transition-all"
+              className="flex-1 flex flex-col items-center py-3 gap-1.5 transition-all relative"
               style={{ minHeight: 60 }}>
-              <span className="text-xl" style={{ filter: active ? 'drop-shadow(0 0 6px #00f5ff)' : 'none', opacity: active ? 1 : 0.35 }}>
-                {tab.icon}
-              </span>
-              <span className="font-orbitron text-[9px] tracking-widest"
-                style={{ color: active ? '#00f5ff' : '#444' }}>
+              <NavIcon
+                name={tab.icon} size={20} color={color}
+                strokeWidth={active ? 2 : 1.5}
+                className="transition-all"
+                style={{ filter: active ? 'drop-shadow(0 0 5px rgba(0,245,255,0.7))' : 'none' }}
+              />
+              <span className="font-orbitron text-[9px] tracking-widest transition-all"
+                style={{ color: active ? '#00f5ff' : '#3a3a4a' }}>
                 {tab.label}
               </span>
               {active && (
-                <div className="absolute bottom-0 h-0.5 w-10 rounded-full"
+                <div className="absolute bottom-0 h-0.5 w-8 rounded-full"
                   style={{ background: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }} />
               )}
             </button>

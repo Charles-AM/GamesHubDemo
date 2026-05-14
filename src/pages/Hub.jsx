@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
+import { GameIcon, Icon } from '../components/Icons'
 
-const GAME_ICONS = { wordwalk: '🏠', shooter: '🛸', runner: '🏃', fruitslash: '🍉', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
 const GAME_NAMES = { wordwalk: 'WORD WALK', shooter: 'SPACE SHOOTER', runner: 'NEON RUNNER', fruitslash: 'FRUIT SLASH', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAG FRENZY', snake: 'SNAKE', celeb: 'WHO AM I?' }
 
 function timeAgo(ts) {
@@ -250,32 +250,39 @@ export default function Hub() {
                 {/* Games */}
                 <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">THE GAMES</p>
                 {[
-                  { icon: '🏠', name: 'WORD WALK', desc: 'Complete the blanked-out word from 4 options to walk your character one step closer to home. 10 correct answers wins. Difficulty scales from easy 3-letter words up to 7+ letter hard ones. In battle mode — first to reach home wins.' },
-                  { icon: '🛸', name: 'SPACE SHOOTER', desc: 'Drag left and right to steer your ship, auto-fire is on. Destroy enemies before they reach the bottom — 3 enemy types get faster over time. 3 lives, 60 seconds.' },
-                  { icon: '🏃', name: 'NEON RUNNER', desc: 'Your character runs automatically. Tap JUMP (or top half of screen) to leap over obstacles — double jump allowed. Tap DUCK for flying drones. Score = distance survived.' },
-                  { icon: '🍉', name: 'FRUIT SLASH', desc: 'Swipe fast across flying fruit to slash it. Build combo streaks for ×2 and ×3 multipliers. Avoid the 💣 — hitting a bomb costs a life. 3 lives, 60 seconds.' },
-                  { icon: '🏹', name: 'ARCHERY', desc: 'Pull the bowstring and aim your crosshair at the target — drag to aim, release to shoot. The longer you hold, the more your hand shakes. 10 shots, highest score wins.' },
-                  { icon: '🐍', name: 'SNAKE', desc: 'Guide your snake to eat food and grow longer — without hitting walls or your own tail. The snake gets faster as you eat more. You have 60 seconds.' },
-                  { icon: '🌟', name: 'WHO AM I?', desc: 'Guess the celebrity from cryptic clues across movies, sports, music and TV. Answer on the first hint for 10 pts, reveal more hints for 6 or 3 pts. 10 rounds — perfect for battle mode!' },
-                  { icon: '✏️', name: 'CROSSWORD', desc: 'Fill in the grid using the clues. Complete words earn points. Finish the whole puzzle for a bonus.' },
-                  { icon: '🔍', name: 'WORD SEARCH', desc: 'Find all the hidden words in the grid before time runs out. Words go in any direction. Tap the first and last letter of each word.' },
-                  { icon: '🌍', name: 'FLAG FRENZY', desc: 'Identify the country from its flag. 10 rounds, 4 choices each. Fast correct answers give bonus points.' },
-                ].map(g => (
-                  <div key={g.name} className="flex gap-3 mb-4 pb-4"
-                    style={{ borderBottom: '1px solid var(--bdr-1)' }}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                      style={{ background: 'var(--surf-2)', border: '1px solid var(--bdr-2)' }}>
-                      {g.icon}
+                  { id: 'wordwalk',   name: 'WORD WALK',      desc: 'Complete the blanked-out word from 4 options to walk your character home. 10 answers wins. Difficulty scales word length and timer.' },
+                  { id: 'shooter',    name: 'SPACE SHOOTER',  desc: 'Drag to steer, auto-fire on. Destroy 3 enemy types before they breach — 60 seconds.' },
+                  { id: 'runner',     name: 'NEON RUNNER',    desc: 'Tap to jump over obstacles, hold to duck under drones. Score = distance survived.' },
+                  { id: 'fruitslash', name: 'FRUIT SLASH',    desc: 'Swipe to slash fruit and build ×3 combo streaks. Avoid bombs — each hit costs a life.' },
+                  { id: 'archery',    name: 'ARCHERY',        desc: 'Pull and aim the bowstring — release to shoot. Aim for bullseye across 10 shots.' },
+                  { id: 'snake',      name: 'SNAKE',          desc: 'Eat food, grow longer, avoid walls and your own tail. Gets faster as you grow.' },
+                  { id: 'celeb',      name: 'WHO AM I?',      desc: 'Guess the celebrity from cryptic clues. Answer fast on hint 1 for max points.' },
+                  { id: 'crossword',  name: 'CROSSWORD',      desc: 'Fill the grid using the clues before time runs out.' },
+                  { id: 'wordsearch', name: 'WORD SEARCH',    desc: 'Find all hidden words — they go in any direction.' },
+                  { id: 'flags',      name: 'FLAG FRENZY',    desc: 'Match flags to countries. 10 rounds, 4 choices, fast answers give bonus points.' },
+                ].map(g => {
+                  const reg = GAME_REGISTRY[g.id]
+                  const c   = reg?.color || '#666'
+                  return (
+                    <div key={g.id} className="flex gap-3 mb-4 pb-4"
+                      style={{ borderBottom: '1px solid var(--bdr-1)' }}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${c}18`, border: `1px solid ${c}40` }}>
+                        <GameIcon id={g.id} size={18} color={c} strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="font-orbitron text-[11px] font-bold text-white mb-1">{g.name}</p>
+                        <p className="font-rajdhani text-xs text-gray-400 leading-relaxed">{g.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-orbitron text-[11px] font-bold text-white mb-1">{g.name}</p>
-                      <p className="font-rajdhani text-xs text-gray-400 leading-relaxed">{g.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* Battle mode */}
-                <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3 mt-2">BATTLE MODE ⚔️</p>
+                <div className="flex items-center gap-1.5 mb-3 mt-2">
+                  <Icon name="swords" size={11} color="#4a4a6a" strokeWidth={1.5} />
+                  <p className="font-orbitron text-[9px] text-gray-500 tracking-widest">BATTLE MODE</p>
+                </div>
                 <div className="rounded-2xl p-4 mb-4"
                   style={{ background: 'rgba(191,0,255,0.06)', border: '1px solid rgba(191,0,255,0.25)' }}>
                   <p className="font-rajdhani text-sm text-gray-300 leading-relaxed mb-3">
@@ -338,9 +345,9 @@ function GameCard({ game, scores: s, navigate, delay }) {
 
         {/* Icon + best score */}
         <div className="flex items-start justify-between mb-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: `${game.color}20`, border: `1px solid ${game.color}44` }}>
-            {game.icon}
+            <GameIcon id={game.id} size={18} color={game.color} strokeWidth={1.5} />
           </div>
           {s && (
             <div className="text-right">
@@ -372,9 +379,9 @@ function GameCardWide({ game, scores: s, navigate, delay }) {
         style={{ background: game.gradient, border: `1px solid ${game.border}`, boxShadow: `0 4px 30px ${game.glow}` }}>
 
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: `${game.color}20`, border: `1px solid ${game.color}44` }}>
-            {game.icon}
+            <GameIcon id={game.id} size={24} color={game.color} strokeWidth={1.5} />
           </div>
           <div className="flex-1">
             <span className="font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full"
@@ -406,15 +413,16 @@ function ActivityRow({ match, i }) {
   const isVs   = match.mode === 'versus'
   const isWin  = match.won === true
   const isLoss = match.won === false
-  const icon   = GAME_ICONS[match.game] || '🎮'
   const name   = GAME_NAMES[match.game] || match.game
+  const gameReg = GAME_REGISTRY[match.game]
+  const gameColor = gameReg?.color || '#555'
 
   let dotColor = '#555'
-  let label    = `▶ Solo · ${match.score} pts`
-  if (match.isDaily) { dotColor = '#ffd700'; label = `📅 Daily · ${match.score} pts` }
-  else if (isVs && isWin)  { dotColor = '#00ff88'; label = `⚔ Beat ${match.p2Name ?? 'opponent'}${match.p2Score != null ? ` · ${match.score} vs ${match.p2Score}` : ''}` }
-  else if (isVs && isLoss) { dotColor = '#ff006e'; label = `⚔ Lost to ${match.p2Name ?? 'opponent'}${match.p2Score != null ? ` · ${match.score} vs ${match.p2Score}` : ''}` }
-  else if (isVs)            { dotColor = '#888';   label = `⚔ Drew ${match.p2Name ?? 'opponent'}` }
+  let label    = `Solo · ${match.score} pts`
+  if (match.isDaily) { dotColor = '#ffd700'; label = `Daily · ${match.score} pts` }
+  else if (isVs && isWin)  { dotColor = '#00ff88'; label = `Beat ${match.p2Name ?? 'opponent'}${match.p2Score != null ? ` · ${match.score} vs ${match.p2Score}` : ''}` }
+  else if (isVs && isLoss) { dotColor = '#ff006e'; label = `Lost to ${match.p2Name ?? 'opponent'}${match.p2Score != null ? ` · ${match.score} vs ${match.p2Score}` : ''}` }
+  else if (isVs)            { dotColor = '#888';   label = `Drew ${match.p2Name ?? 'opponent'}` }
 
   return (
     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
@@ -422,7 +430,10 @@ function ActivityRow({ match, i }) {
       className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
       style={{ background: 'var(--surf-1)', border: '1px solid var(--bdr-1)' }}>
       <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}` }} />
-      <span className="text-sm">{icon}</span>
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+        style={{ background: `${gameColor}18`, border: `1px solid ${gameColor}30` }}>
+        {match.game ? <GameIcon id={match.game} size={14} color={gameColor} strokeWidth={1.5} /> : null}
+      </div>
       <div className="flex-1 min-w-0">
         <p className="font-rajdhani text-xs text-gray-300 truncate">{label}</p>
         <p className="font-orbitron text-[9px] text-gray-600">{name}</p>

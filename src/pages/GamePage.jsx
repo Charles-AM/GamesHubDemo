@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext'
 import { GAME_REGISTRY } from '../games/gameRegistry'
 import DifficultyPicker from '../components/DifficultyPicker'
 import DailyGame from './DailyGame'
+import { GameIcon, DiffIcon } from '../components/Icons'
 
 export default function GamePage() {
   const { gameId, mode } = useParams()
@@ -34,8 +35,9 @@ export default function GamePage() {
           <span style={{ fontSize: 13 }}>‹</span> HUB
         </button>
 
-        <span className="font-orbitron text-[10px] tracking-widest" style={{ color: game.color }}>
-          {game.icon} {game.label}
+        <span className="flex items-center gap-1.5 font-orbitron text-[10px] tracking-widest" style={{ color: game.color }}>
+          <GameIcon id={game.id} size={14} color={game.color} strokeWidth={2} />
+          {game.label}
         </span>
 
         {!user ? (
@@ -46,14 +48,17 @@ export default function GamePage() {
           </button>
         ) : difficulty ? (
           /* Show current difficulty badge once game is running */
-          <span className="font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full"
-            style={{
-              color:       difficulty === 'easy' ? '#00ff88' : difficulty === 'hard' ? '#ff006e' : '#ffd700',
-              background:  difficulty === 'easy' ? 'rgba(0,255,136,0.1)' : difficulty === 'hard' ? 'rgba(255,0,110,0.1)' : 'rgba(255,215,0,0.1)',
-              border: `1px solid ${difficulty === 'easy' ? 'rgba(0,255,136,0.3)' : difficulty === 'hard' ? 'rgba(255,0,110,0.3)' : 'rgba(255,215,0,0.3)'}`,
-            }}>
-            {difficulty === 'easy' ? '🌱 ROOKIE' : difficulty === 'hard' ? '💀 VETERAN' : '⚡ CHALLENGER'}
-          </span>
+          {(() => {
+            const dc = difficulty === 'easy' ? '#00ff88' : difficulty === 'hard' ? '#ff006e' : '#ffd700'
+            const dl = difficulty === 'easy' ? 'ROOKIE' : difficulty === 'hard' ? 'VETERAN' : 'CHALLENGER'
+            return (
+              <span className="flex items-center gap-1 font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full"
+                style={{ color: dc, background: `${dc}12`, border: `1px solid ${dc}44` }}>
+                <DiffIcon level={difficulty} size={11} color={dc} strokeWidth={2} />
+                {dl}
+              </span>
+            )
+          })()}
         ) : (
           <div style={{ width: 72 }} />
         )}
