@@ -201,7 +201,7 @@ export default function UserSetup() {
             {[
               { id: 'pong',       label: 'PONG VS AI',   color: '#00f5ff' },
               { id: 'soccer',     label: 'PENALTIES',    color: '#00ff88' },
-              { id: 'hoops',      label: 'HOOP SHOTS',   color: '#ff8c00' },
+              { id: 'whack',      label: 'WHACK-A-MOLE', color: '#00f5ff' },
               { id: 'shooter',    label: 'SHOOTER',      color: '#00f5ff' },
               { id: 'runner',     label: 'RUNNER',       color: '#00ff88' },
               { id: 'fruitslash', label: 'FRUIT SLASH',  color: '#ff006e' },

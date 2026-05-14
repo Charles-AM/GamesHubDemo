@@ -1,5 +1,5 @@
 import PongGame       from './pong/PongGame'
-import HoopsGame      from './hoops/HoopsGame'
+import WhackGame      from './whack/WhackGame'
 import SoccerGame     from './soccer/SoccerGame'
 import ArcheryGame    from './archery/ArcheryGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
@@ -30,14 +30,14 @@ export const GAME_REGISTRY = {
     border: 'rgba(0,255,136,0.45)',
     glow: 'rgba(0,255,136,0.18)',
   },
-  hoops: {
-    id: 'hoops', component: HoopsGame,
-    label: 'HOOP SHOTS', desc: 'Drag to aim, release to shoot — sink as many baskets as you can',
-    tag: 'SPORT',
-    color: '#ff8c00',
-    gradient: 'linear-gradient(135deg, rgba(255,140,0,0.2), rgba(200,80,0,0.15))',
-    border: 'rgba(255,140,0,0.45)',
-    glow: 'rgba(255,140,0,0.18)',
+  whack: {
+    id: 'whack', component: WhackGame,
+    label: 'WHACK-A-MOLE', desc: 'Tap moles before they vanish — combo multipliers, bombs to dodge, 60 seconds',
+    tag: 'REFLEX',
+    color: '#00f5ff',
+    gradient: 'linear-gradient(135deg, rgba(0,245,255,0.18), rgba(0,80,200,0.15))',
+    border: 'rgba(0,245,255,0.45)',
+    glow: 'rgba(0,245,255,0.18)',
   },
   shooter: {
     id: 'shooter', component: ShooterGame,

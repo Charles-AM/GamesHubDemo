@@ -181,6 +181,22 @@ const GAME_ICONS = {
     </>
   ),
 
+  whack: ({ c }) => (
+    <>
+      {/* Mallet head */}
+      <rect x="14" y="2" width="8" height="10" rx="2" />
+      {/* Handle */}
+      <line x1="18" y1="12" x2="10" y2="22" strokeWidth="2.5" />
+      {/* Hole circles */}
+      <ellipse cx="5"  cy="16" rx="4" ry="2.2" />
+      <ellipse cx="13" cy="19" rx="4" ry="2.2" />
+      {/* Mole peeking */}
+      <circle cx="5" cy="13" r="3" fill={c} stroke="none" />
+      <circle cx="4" cy="12" r="0.8" fill="#080818" stroke="none" />
+      <circle cx="6" cy="12" r="0.8" fill="#080818" stroke="none" />
+    </>
+  ),
+
   hoops: ({ c }) => (
     <>
       {/* Backboard */}
