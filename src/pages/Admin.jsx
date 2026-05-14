@@ -322,14 +322,17 @@ export default function Admin() {
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">RECENT SIGNUPS</p>
               <div className="flex flex-col gap-3">
-                {users.slice(0, 6).map(u => (
+                {users.slice(0, 10).map(u => (
                   <div key={u.id} className="flex items-center gap-3">
-                    <span className="text-xl">{u.avatar}</span>
+                    <span className="text-xl flex-shrink-0">{u.avatar}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-orbitron text-[10px] text-white truncate">{u.username}</p>
-                      <p className="font-rajdhani text-[9px] text-gray-600">LV.{u.level} · {u.totalPlays} games played</p>
+                      <p className="font-rajdhani text-[9px] text-gray-500 truncate">{u.email || '—'}</p>
+                      <p className="font-rajdhani text-[9px] text-gray-600">LV.{u.level} · {u.totalPlays} plays</p>
                     </div>
-                    <p className="font-rajdhani text-[9px] text-gray-600 flex-shrink-0">{joinDate(u.joined_at)}</p>
+                    <p className="font-rajdhani text-[9px] text-gray-600 flex-shrink-0 text-right">
+                      {joinDate(u.joined_at)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -410,8 +413,9 @@ export default function Admin() {
                 <span className="text-2xl flex-shrink-0">{u.avatar}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-orbitron text-[11px] text-white truncate">{u.username}</p>
-                  <p className="font-rajdhani text-[10px] text-gray-500">
-                    LV.{u.level} · {u.xp || 0} XP{u.streak_count > 0 ? ` · 🔥${u.streak_count}` : ''}
+                  <p className="font-rajdhani text-[10px] text-gray-500 truncate">{u.email || '—'}</p>
+                  <p className="font-rajdhani text-[9px] text-gray-600">
+                    LV.{u.level} · {u.xp || 0} XP{u.streak_count > 0 ? ` · 🔥${u.streak_count}` : ''} · {joinDate(u.joined_at)}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">

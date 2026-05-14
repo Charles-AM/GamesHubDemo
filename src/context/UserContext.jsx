@@ -205,13 +205,15 @@ export function UserProvider({ children }) {
     // authUserRef may not be set yet if the auth state listener hasn't fired —
     // fall back to asking Supabase directly for the current session
     let uid = authUserRef.current?.id
+    let email = authUserRef.current?.email
     if (!uid) {
       const { data } = await supabase.auth.getUser()
-      uid = data?.user?.id
+      uid   = data?.user?.id
+      email = data?.user?.email
     }
     if (!uid) throw new Error('Not authenticated — please sign in again')
     const { data, error } = await supabase.from('profiles').insert({
-      id: uid, username, avatar,
+      id: uid, username, avatar, email,
       xp: 0, streak_count: 0, streak_last_date: null,
     }).select().single()
     if (error) throw error
