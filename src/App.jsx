@@ -75,7 +75,7 @@ export default function App() {
     <UserProvider>
       <BrowserRouter>
         <div className="scanlines grid-bg min-h-screen">
-          <div className="relative mx-auto min-h-screen" style={{ maxWidth: 480 }}>
+          <div className="relative mx-auto min-h-screen" style={{ maxWidth: 540 }}>
             <LevelUpToast />
             <Layout />
           </div>

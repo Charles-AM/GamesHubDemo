@@ -369,7 +369,8 @@ export default function RunnerGame({ difficulty = 'medium', onFinish }) {
       </div>
 
       <canvas ref={canvasRef} width={W} height={H}
-        style={{ width: '100%', maxWidth: W, height: 'auto', display: 'block', touchAction: 'none' }} />
+        className="game-canvas"
+        onContextMenu={e => e.preventDefault()} />
 
       {/* On-screen controls */}
       <div className="w-full flex justify-between px-6 mt-3" style={{ maxWidth: W }}>

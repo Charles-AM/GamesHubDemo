@@ -198,7 +198,9 @@ export default function SoccerGame({ difficulty = 'medium', onFinish }) {
     e.preventDefault()
     const st = stRef.current
     if (!st || st.ball.flying || st.shotsLeft <= 0 || st.gameOver) return
-    const rect = canvasRef.current.getBoundingClientRect()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
     const cx = (e.clientX - rect.left) * (W / rect.width)
     const cy = (e.clientY - rect.top)  * (H / rect.height)
     // Only activate if touch is near the ball
@@ -210,7 +212,9 @@ export default function SoccerGame({ difficulty = 'medium', onFinish }) {
   const onMove = useCallback((e) => {
     e.preventDefault()
     if (!dragRef.current.active) return
-    const rect = canvasRef.current.getBoundingClientRect()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
     dragRef.current.cx = (e.clientX - rect.left) * (W / rect.width)
     dragRef.current.cy = (e.clientY - rect.top)  * (H / rect.height)
   }, [])
@@ -511,11 +515,12 @@ export default function SoccerGame({ difficulty = 'medium', onFinish }) {
       <canvas
         ref={canvasRef}
         width={W} height={H}
-        style={{ display: 'block', maxWidth: '100%', touchAction: 'none', userSelect: 'none' }}
+        className="game-canvas"
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerLeave={onUp}
+        onContextMenu={e => e.preventDefault()}
       />
     </div>
   )

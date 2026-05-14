@@ -171,7 +171,8 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
   const handleTap = useCallback((e) => {
     e.preventDefault()
     const st = stRef.current; if (!st) return
-    const rect = canvasRef.current.getBoundingClientRect()
+    const canvas = canvasRef.current; if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
     const tx = (e.clientX - rect.left) * (W / rect.width)
     const ty = (e.clientY - rect.top)  * (H / rect.height)
 
@@ -393,7 +394,8 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
       <canvas
         ref={canvasRef}
         width={W} height={H}
-        style={{ display: 'block', maxWidth: '100%', touchAction: 'none', userSelect: 'none' }}
+        className="game-canvas"
+        onContextMenu={e => e.preventDefault()}
         onPointerDown={handleTap}
       />
     </div>

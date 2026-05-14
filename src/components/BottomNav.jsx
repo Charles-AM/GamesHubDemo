@@ -13,7 +13,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 z-50"
-      style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480 }}>
+      style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 540 }}>
       <div className="flex items-stretch"
         style={{
           background: 'rgba(8,8,24,0.95)',

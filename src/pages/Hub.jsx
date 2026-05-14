@@ -220,7 +220,7 @@ export default function Hub() {
       {/* ── Game Grid (2-col for first 4, full for 5th) ── */}
       <div className="relative z-10 px-4">
         {/* 2-col grid for all games */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {GAME_LIST.map((g, i) => (
             <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={i * 0.05} />
           ))}
