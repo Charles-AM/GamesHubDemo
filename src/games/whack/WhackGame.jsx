@@ -4,11 +4,10 @@ import { useUser } from '../../context/UserContext'
 import ResultScreen from '../../components/ResultScreen'
 
 /* ─── Layout ──────────────────────────────────────────────────────────── */
-const W = 390
-const H = 580
-const HOLE_R   = 44      // hole radius
-const MOLE_R   = 38      // mole radius (slightly smaller than hole)
-const MAX_MISS = 3
+const W      = 390
+const H      = 580
+const HOLE_R = 44
+const MOLE_R = 38
 
 // 3×4 grid of holes
 const COL_XS = [78, 195, 312]
@@ -18,108 +17,69 @@ for (let r = 0; r < 4; r++)
   for (let c = 0; c < 3; c++)
     HOLES.push({ id: r * 3 + c, x: COL_XS[c], y: ROW_YS[r] })
 
-/* ─── Mole types ──────────────────────────────────────────────────────── */
-const MOLE_TYPES = {
-  normal: { color: '#00f5ff', glow: '#00f5ff', pts: 1, label: null  },
-  speedy: { color: '#ffd700', glow: '#ffd700', pts: 2, label: '×2'  },
-  bomb:   { color: '#ff006e', glow: '#ff006e', pts: 0, label: '💣'  },
-}
+const GAME_DURATION = 60
 
 /* ─── Difficulty ──────────────────────────────────────────────────────── */
+// upTime: frames mole stays up  |  riseTime: frames to rise/sink
+// spawnInterval: frames between spawns  |  maxUp: max moles visible at once
+// goldenChance: chance of a golden mole (worth 3 pts, disappears faster)
 const DIFF = {
-  easy:   { upTime: 78,  riseTime: 14, spawnInterval: 54,  maxUp: 3, bombChance: 0.08, speedyChance: 0.15 },
-  medium: { upTime: 50,  riseTime: 10, spawnInterval: 36,  maxUp: 4, bombChance: 0.18, speedyChance: 0.26 },
-  hard:   { upTime: 30,  riseTime: 6,  spawnInterval: 22,  maxUp: 5, bombChance: 0.28, speedyChance: 0.38 },
+  easy:   { upTime: 85,  riseTime: 14, spawnInterval: 58, maxUp: 2, goldenChance: 0.10 },
+  medium: { upTime: 52,  riseTime: 10, spawnInterval: 38, maxUp: 4, goldenChance: 0.18 },
+  hard:   { upTime: 28,  riseTime: 6,  spawnInterval: 20, maxUp: 6, goldenChance: 0.28 },
 }
-
-const GAME_DURATION = 60
 
 /* ─── Helpers ─────────────────────────────────────────────────────────── */
 function easeOut(t) { return 1 - Math.pow(1 - t, 3) }
-function easeIn(t)  { return t * t * t }
-
-function pickType(cfg) {
-  const r = Math.random()
-  if (r < cfg.bombChance)  return 'bomb'
-  if (r < cfg.bombChance + cfg.speedyChance) return 'speedy'
-  return 'normal'
-}
 
 /* ─── Draw ────────────────────────────────────────────────────────────── */
 function drawHole(ctx, x, y) {
-  // Outer shadow ring
   ctx.beginPath(); ctx.ellipse(x, y, HOLE_R + 4, HOLE_R * 0.38, 0, 0, Math.PI * 2)
   ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fill()
-  // Hole
   ctx.beginPath(); ctx.ellipse(x, y, HOLE_R, HOLE_R * 0.34, 0, 0, Math.PI * 2)
   ctx.fillStyle = '#0a0a1a'; ctx.fill()
   ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1.5; ctx.stroke()
 }
 
-function drawMole(ctx, x, holeY, progress, type, hit, hitProgress) {
+function drawMole(ctx, x, holeY, progress, golden, isHit, hitProgress) {
   if (progress <= 0) return
-  const t   = MOLE_TYPES[type]
-  const pop = easeOut(Math.min(progress, 1))
-
-  // How far above hole center the mole emerges (half-sphere peeking)
+  const pop    = easeOut(Math.min(progress, 1))
   const emerge = MOLE_R * 1.4 * pop
   const cx     = x
   const cy     = holeY - emerge + MOLE_R * 0.5
+  const color  = golden ? '#ffd700' : '#00f5ff'
 
   ctx.save()
 
   // Hit burst ring
-  if (hit && hitProgress > 0) {
+  if (isHit && hitProgress > 0) {
     const r = MOLE_R + hitProgress * 28
     const a = 1 - hitProgress
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.strokeStyle = `${t.color}${Math.floor(a * 0xff).toString(16).padStart(2,'0')}`
+    ctx.strokeStyle = `${color}${Math.floor(a * 0xff).toString(16).padStart(2, '0')}`
     ctx.lineWidth = 3; ctx.stroke()
   }
 
-  if (!hit) {
-    // Glow
-    ctx.shadowColor = t.glow; ctx.shadowBlur = 18
-    // Body (circle)
+  if (!isHit) {
+    ctx.shadowColor = color; ctx.shadowBlur = golden ? 22 : 18
     ctx.beginPath(); ctx.arc(cx, cy, MOLE_R * pop, 0, Math.PI * 2)
-    ctx.fillStyle = t.color; ctx.fill()
+    ctx.fillStyle = color; ctx.fill()
     ctx.shadowBlur = 0
 
-    // Face
-    if (type === 'bomb') {
-      // Bomb face — X eyes
-      ctx.strokeStyle = '#080818'; ctx.lineWidth = 2.5
-      ;[[-10,-6],[10,-6]].forEach(([ex,ey]) => {
-        ctx.beginPath()
-        ctx.moveTo(cx+ex-5, cy+ey-5); ctx.lineTo(cx+ex+5, cy+ey+5)
-        ctx.moveTo(cx+ex+5, cy+ey-5); ctx.lineTo(cx+ex-5, cy+ey+5)
-        ctx.stroke()
-      })
-      // Fuse
-      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2
-      ctx.beginPath(); ctx.moveTo(cx, cy - MOLE_R * pop)
-      ctx.quadraticCurveTo(cx + 12, cy - MOLE_R * pop - 14, cx + 6, cy - MOLE_R * pop - 22)
-      ctx.stroke()
-    } else {
-      // Normal/speedy — dot eyes + smile
-      ctx.fillStyle = '#080818'
-      ctx.beginPath(); ctx.arc(cx - 10, cy - 7, 4.5, 0, Math.PI * 2); ctx.fill()
-      ctx.beginPath(); ctx.arc(cx + 10,  cy - 7, 4.5, 0, Math.PI * 2); ctx.fill()
-      ctx.strokeStyle = '#080818'; ctx.lineWidth = 2.5
-      ctx.beginPath(); ctx.arc(cx, cy + 4, 9, 0.2, Math.PI - 0.2); ctx.stroke()
-      if (type === 'speedy') {
-        // Speed lines
-        ctx.strokeStyle = 'rgba(255,215,0,0.6)'; ctx.lineWidth = 1.5
-        ctx.beginPath(); ctx.moveTo(cx - MOLE_R - 8, cy - 6); ctx.lineTo(cx - MOLE_R + 2, cy - 6); ctx.stroke()
-        ctx.beginPath(); ctx.moveTo(cx - MOLE_R - 12, cy + 4); ctx.lineTo(cx - MOLE_R - 2, cy + 4); ctx.stroke()
-      }
-    }
+    // Eyes
+    ctx.fillStyle = '#080818'
+    ctx.beginPath(); ctx.arc(cx - 10, cy - 7, 4.5, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.arc(cx + 10, cy - 7, 4.5, 0, Math.PI * 2); ctx.fill()
 
-    // ×2 label for speedy
-    if (t.label && type === 'speedy') {
+    // Smile
+    ctx.strokeStyle = '#080818'; ctx.lineWidth = 2.5
+    ctx.beginPath(); ctx.arc(cx, cy + 4, 9, 0.2, Math.PI - 0.2); ctx.stroke()
+
+    // Golden star label
+    if (golden) {
       ctx.fillStyle = '#080818'
       ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center'
-      ctx.fillText('×2', cx, cy + MOLE_R * pop - 4)
+      ctx.fillText('★3', cx, cy + MOLE_R * pop - 4)
     }
   }
 
@@ -128,7 +88,7 @@ function drawMole(ctx, x, holeY, progress, type, hit, hitProgress) {
 
 /* ─── Component ──────────────────────────────────────────────────────── */
 export default function WhackGame({ difficulty = 'medium', onFinish }) {
-  const navigate   = useNavigate()
+  const navigate       = useNavigate()
   const { recordGame } = useUser()
   const cfg = DIFF[difficulty] || DIFF.medium
 
@@ -136,39 +96,41 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
   const stRef       = useRef(null)
   const rafRef      = useRef(null)
   const lastTimeRef = useRef(null)
+  const bestComboRef = useRef(0)
 
   const mkState = useCallback(() => ({
-    moles:       HOLES.map(h => ({
-      holeId:     h.id,
-      state:      'hidden',   // hidden | rising | up | sinking | hit
-      progress:   0,          // 0-1 for rise/sink animation
-      upTimer:    0,          // frames remaining while 'up'
-      hitProgress:0,          // 0-1 burst animation
-      type:       'normal',
+    moles: HOLES.map(h => ({
+      holeId: h.id,
+      state: 'hidden',     // hidden | rising | up | sinking | hit
+      progress: 0,
+      upTimer: 0,
+      hitProgress: 0,
+      golden: false,
     })),
-    score:       0,
-    misses:      0,
-    combo:       0,
-    comboTimer:  0,
-    spawnTimer:  cfg.spawnInterval,
-    timeLeft:    GAME_DURATION,
-    gameOver:    false,
-    flashHits:   [],   // {x,y,pts,life} floating +pts
-    missFlashes:  [],  // {x,y,text,life,color} floating penalty text
-    lifeFlash:    0,   // frames of red overlay when life is lost
-    introTimer:   180, // 3s intro hint
+    score:      0,
+    combo:      0,
+    comboTimer: 0,
+    spawnTimer: cfg.spawnInterval,
+    timeLeft:   GAME_DURATION,
+    popups:     [],   // { x, y, text, color, life }
+    missFlash:  0,    // red overlay countdown
+    introTimer: 150,  // 2.5s intro hint
   }), [cfg])
 
-  useEffect(() => { stRef.current = mkState() }, [mkState])
+  useEffect(() => {
+    stRef.current = mkState()
+    bestComboRef.current = 0
+  }, [mkState])
 
   const resetGame = useCallback(() => {
-    stRef.current   = mkState()
+    stRef.current = mkState()
+    bestComboRef.current = 0
     lastTimeRef.current = null
     setPhase('playing')
   }, [mkState])
 
   const [phase,  setPhase]  = useState('playing')
-  const [finals, setFinals] = useState({ score: 0, hits: 0, best: 0 })
+  const [finals, setFinals] = useState({ score: 0 })
 
   /* ── Tap handler ── */
   const handleTap = useCallback((e) => {
@@ -179,11 +141,11 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
     const tx = (e.clientX - rect.left) * (W / rect.width)
     const ty = (e.clientY - rect.top)  * (H / rect.height)
 
-    // Find closest visible mole within HOLE_R
-    let bestDist = HOLE_R + 8, bestIdx = -1
+    // Find closest visible mole
+    let bestDist = HOLE_R + 10, bestIdx = -1
     st.moles.forEach((m, i) => {
       if (m.state !== 'up' && m.state !== 'rising') return
-      const h = HOLES[m.holeId]
+      const h      = HOLES[m.holeId]
       const emerge = MOLE_R * 1.4 * easeOut(m.progress)
       const mx = h.x, my = h.y - emerge + MOLE_R * 0.5
       const dist = Math.hypot(tx - mx, ty - my)
@@ -192,28 +154,20 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
 
     if (bestIdx === -1) return
 
-    const m = st.moles[bestIdx]
-    const h = HOLES[m.holeId]
-    const t = MOLE_TYPES[m.type]
+    const m   = st.moles[bestIdx]
+    const h   = HOLES[m.holeId]
+    const pts = m.golden ? 3 : 1
+    const comboBonus = st.combo >= 5 ? 2 : st.combo >= 3 ? 1 : 0
+    const total = pts + comboBonus
 
-    if (m.type === 'bomb') {
-      // Tapped a bomb → lose a life
-      st.misses = Math.min(MAX_MISS, st.misses + 1)
-      st.lifeFlash = 18
-      st.missFlashes.push({ x: h.x, y: h.y - 50, text: '💣 -1 LIFE!', color: '#ff006e', life: 60 })
-      m.state = 'hit'; m.hitProgress = 0
-      if (st.misses >= MAX_MISS) st.gameOver = true
-    } else {
-      const comboBonus = st.combo >= 5 ? 2 : st.combo >= 3 ? 1 : 0
-      const pts = t.pts + comboBonus
-      st.score  += pts
-      st.combo  += 1
-      st.comboTimer = 90
-      m.state = 'hit'; m.hitProgress = 0
+    st.score     += total
+    st.combo     += 1
+    st.comboTimer = 90
+    if (st.combo > bestComboRef.current) bestComboRef.current = st.combo
+    m.state = 'hit'; m.hitProgress = 0
 
-      // Floating +pts
-      st.flashHits.push({ x: h.x, y: h.y - 50, pts, life: 45 })
-    }
+    const color = m.golden ? '#ffd700' : '#00f5ff'
+    st.popups.push({ x: h.x, y: h.y - 50, text: `+${total}`, color, life: 45 })
   }, [])
 
   /* ── RAF loop ── */
@@ -232,22 +186,24 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
       /* Combo timer */
       if (st.comboTimer > 0) { st.comboTimer -= dt; if (st.comboTimer <= 0) st.combo = 0 }
 
-      /* Spawn */
+      /* Spawn — rate speeds up over time */
       st.spawnTimer -= dt
       if (st.spawnTimer <= 0) {
         const upCount = st.moles.filter(m => m.state === 'up' || m.state === 'rising').length
         if (upCount < cfg.maxUp) {
           const hidden = st.moles.filter(m => m.state === 'hidden')
           if (hidden.length > 0) {
-            const pick = hidden[Math.floor(Math.random() * hidden.length)]
+            const pick    = hidden[Math.floor(Math.random() * hidden.length)]
+            const golden  = Math.random() < cfg.goldenChance
             pick.state    = 'rising'
             pick.progress = 0
-            pick.type     = pickType(cfg)
-            pick.upTimer  = cfg.upTime + Math.random() * 20 - 10
+            pick.golden   = golden
+            // Golden moles disappear faster
+            pick.upTimer  = (golden ? cfg.upTime * 0.55 : cfg.upTime) + Math.random() * 14 - 7
           }
         }
-        // Spawn rate speeds up slightly over time
-        const speedup = Math.max(0.55, 1 - (GAME_DURATION - st.timeLeft) / GAME_DURATION * 0.45)
+        const elapsed = GAME_DURATION - st.timeLeft
+        const speedup = Math.max(0.5, 1 - (elapsed / GAME_DURATION) * 0.5)
         st.spawnTimer = cfg.spawnInterval * speedup
       }
 
@@ -259,39 +215,37 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
         } else if (m.state === 'up') {
           m.upTimer -= dt
           if (m.upTimer <= 0) {
-            // Missed!
+            // Mole escaped — deduct 1 point
             m.state = 'sinking'
-            if (m.type !== 'bomb') {  // missing a bomb = no penalty
-              st.misses += 1
-              st.lifeFlash = 12
-              st.combo = 0
-              const h2 = HOLES[m.holeId]
-              st.missFlashes.push({ x: h2.x, y: h2.y - 40, text: 'MISSED! -1', color: '#ff4466', life: 55 })
-              if (st.misses >= MAX_MISS) st.gameOver = true
-            }
+            st.score = Math.max(0, st.score - 1)
+            st.combo = 0
+            st.missFlash = 10
+            const h2 = HOLES[m.holeId]
+            st.popups.push({ x: h2.x, y: h2.y - 40, text: '-1', color: '#ff4466', life: 50 })
           }
         } else if (m.state === 'sinking') {
           m.progress -= (1 / cfg.riseTime) * dt
           if (m.progress <= 0) { m.progress = 0; m.state = 'hidden' }
         } else if (m.state === 'hit') {
           m.hitProgress += (1 / 12) * dt
-          m.progress    -= (1 / 8) * dt
+          m.progress    -= (1 / 8)  * dt
           if (m.hitProgress >= 1 || m.progress <= 0) {
             m.progress = 0; m.state = 'hidden'; m.hitProgress = 0
           }
         }
       })
 
-      /* Flash hits + miss flashes */
-      st.flashHits  = st.flashHits.map(f => ({ ...f, y: f.y - 0.8 * dt, life: f.life - dt })).filter(f => f.life > 0)
-      st.missFlashes = st.missFlashes.map(f => ({ ...f, y: f.y - 0.5 * dt, life: f.life - dt })).filter(f => f.life > 0)
-      if (st.lifeFlash > 0) st.lifeFlash -= dt
+      /* Popups + timers */
+      st.popups = st.popups
+        .map(p => ({ ...p, y: p.y - 0.8 * dt, life: p.life - dt }))
+        .filter(p => p.life > 0)
+      if (st.missFlash  > 0) st.missFlash  -= dt
       if (st.introTimer > 0) st.introTimer -= dt
 
       /* Timer */
       st.timeLeft -= dt / 60
-      if (st.timeLeft <= 0 || st.gameOver) {
-        recordGame?.({ game: 'whack', score: st.score, mode: 'solo', won: !st.gameOver })
+      if (st.timeLeft <= 0) {
+        recordGame?.({ game: 'whack', score: st.score, mode: 'solo', won: true })
         const finalScore = st.score
         setFinals({ score: finalScore })
         if (onFinish) { onFinish(finalScore); return }
@@ -300,50 +254,41 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
       }
 
       /* ── Draw ── */
-      // Background
       const bg = ctx.createLinearGradient(0, 0, 0, H)
       bg.addColorStop(0, '#080818'); bg.addColorStop(1, '#0d0a1a')
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
 
-      // Subtle grid glow orbs
+      // Glow orbs
       ctx.fillStyle = 'rgba(0,245,255,0.03)'
-      ctx.beginPath(); ctx.arc(100, 200, 120, 0, Math.PI*2); ctx.fill()
+      ctx.beginPath(); ctx.arc(100, 200, 120, 0, Math.PI * 2); ctx.fill()
       ctx.fillStyle = 'rgba(191,0,255,0.03)'
-      ctx.beginPath(); ctx.arc(290, 380, 110, 0, Math.PI*2); ctx.fill()
+      ctx.beginPath(); ctx.arc(290, 380, 110, 0, Math.PI * 2); ctx.fill()
 
-      // Draw holes (back to front, moles over holes)
+      // Holes
       HOLES.forEach(h => drawHole(ctx, h.x, h.y))
 
-      // Draw moles (bottom rows first for depth)
-      ;[...st.moles].sort((a,b) => HOLES[a.holeId].y - HOLES[b.holeId].y)
+      // Moles (bottom rows first for depth)
+      ;[...st.moles].sort((a, b) => HOLES[a.holeId].y - HOLES[b.holeId].y)
         .forEach(m => {
           const h = HOLES[m.holeId]
-          drawMole(ctx, h.x, h.y, m.progress, m.type, m.state === 'hit', m.hitProgress)
+          drawMole(ctx, h.x, h.y, m.progress, m.golden, m.state === 'hit', m.hitProgress)
         })
 
-      // Miss hearts
-      for (let i = 0; i < MAX_MISS; i++) {
-        const lost = i < st.misses
-        ctx.beginPath()
-        const hx = 14 + i * 26, hy = 28
-        // Simple heart shape
-        ctx.fillStyle = lost ? 'rgba(255,0,110,0.25)' : '#ff006e'
-        ctx.shadowColor = lost ? 'transparent' : '#ff006e'
-        ctx.shadowBlur  = lost ? 0 : 8
-        ctx.font = '18px sans-serif'; ctx.textAlign = 'left'
-        ctx.fillText(lost ? '🖤' : '❤️', hx - 9, hy + 7)
-        ctx.shadowBlur = 0
+      // Miss flash overlay
+      if (st.missFlash > 0) {
+        ctx.fillStyle = `rgba(255,0,60,${(st.missFlash / 10) * 0.22})`
+        ctx.fillRect(0, 0, W, H)
       }
 
       // Score
       ctx.fillStyle = '#00f5ff'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'right'
       ctx.fillText(`${st.score} PTS`, W - 14, 32)
 
-      // Combo
+      // Combo badge
       if (st.combo >= 3) {
         ctx.fillStyle = '#ffd700'
         ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 10
-        ctx.font = `bold ${11 + st.combo}px monospace`; ctx.textAlign = 'center'
+        ctx.font = `bold ${Math.min(18, 11 + st.combo)}px monospace`; ctx.textAlign = 'center'
         ctx.fillText(`COMBO ×${st.combo}!`, W / 2, 52)
         ctx.shadowBlur = 0
       }
@@ -356,52 +301,31 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
       ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'
       ctx.fillText(`${Math.ceil(st.timeLeft)}s`, W / 2, 32)
 
-      // Life-lost red flash overlay
-      if (st.lifeFlash > 0) {
-        ctx.fillStyle = `rgba(255,0,60,${(st.lifeFlash / 18) * 0.28})`
-        ctx.fillRect(0, 0, W, H)
-      }
-
-      // Floating +pts
-      st.flashHits.forEach(f => {
-        const a = Math.min(1, f.life / 20)
-        ctx.fillStyle   = `rgba(255,215,0,${a})`
-        ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8
+      // Popups (+pts / -1)
+      st.popups.forEach(p => {
+        const a = Math.min(1, p.life / 20)
+        ctx.globalAlpha = a
+        ctx.fillStyle   = p.color
+        ctx.shadowColor = p.color; ctx.shadowBlur = 8
         ctx.font = 'bold 20px monospace'; ctx.textAlign = 'center'
-        ctx.fillText(`+${f.pts}`, f.x, f.y)
+        ctx.fillText(p.text, p.x, p.y)
         ctx.shadowBlur = 0
       })
+      ctx.globalAlpha = 1
 
-      // Miss / bomb penalty text
-      st.missFlashes.forEach(f => {
-        const a = Math.min(1, f.life / 30)
-        ctx.fillStyle   = f.color
-        ctx.shadowColor = f.color; ctx.shadowBlur = 10
-        ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center'
-        ctx.globalAlpha = a
-        ctx.fillText(f.text, f.x, f.y)
-        ctx.globalAlpha = 1; ctx.shadowBlur = 0
-      })
-
-      // Intro hint (fades out after 3s)
+      // Intro hint
       if (st.introTimer > 0) {
         const a = Math.min(1, st.introTimer / 40)
         ctx.globalAlpha = a
-        ctx.fillStyle = 'rgba(0,0,0,0.55)'
-        ctx.fillRect(W/2 - 145, H/2 - 22, 290, 44)
+        ctx.fillStyle = 'rgba(0,0,0,0.6)'
+        ctx.fillRect(W / 2 - 150, H / 2 - 24, 300, 46)
         ctx.fillStyle = '#ffffff'
         ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'
-        ctx.fillText('HIT MOLES · AVOID 💣 BOMBS', W/2, H/2 + 5)
+        ctx.fillText('HIT MOLES · MISS = -1 PTS', W / 2, H / 2 - 4)
+        ctx.font = '11px monospace'
+        ctx.fillStyle = '#ffd700'
+        ctx.fillText('★ GOLDEN MOLES = 3 PTS', W / 2, H / 2 + 14)
         ctx.globalAlpha = 1
-      }
-
-      // Game over flash overlay
-      if (st.gameOver) {
-        ctx.fillStyle = 'rgba(255,0,110,0.35)'; ctx.fillRect(0, 0, W, H)
-        ctx.fillStyle = '#ff006e'; ctx.font = 'bold 44px monospace'; ctx.textAlign = 'center'
-        ctx.shadowColor = '#ff006e'; ctx.shadowBlur = 20
-        ctx.fillText('OUT!', W / 2, H / 2)
-        ctx.shadowBlur = 0
       }
 
       rafRef.current = requestAnimationFrame(tick)
@@ -409,7 +333,7 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
 
     rafRef.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [phase, cfg, recordGame])
+  }, [phase, cfg, recordGame, onFinish])
 
   if (phase === 'done') {
     return (
@@ -417,10 +341,9 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
         game="WHACK-A-MOLE"
         score={finals.score}
         color="cyan"
-        outcome={stRef.current?.misses >= MAX_MISS ? 'lose' : undefined}
         stats={[
-          { label: 'SCORE', value: finals.score },
-          { label: 'COMBO', value: `×${Math.max(...(stRef.current?.flashHits?.map(()=>0)||[0]), 0)}` },
+          { label: 'SCORE',      value: finals.score },
+          { label: 'BEST COMBO', value: `×${bestComboRef.current}` },
         ]}
         onPlayAgain={resetGame}
         onHub={() => navigate('/hub')}
