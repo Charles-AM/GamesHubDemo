@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
-const GAME_ICONS = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
-const GAME_NAMES = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAGS', snake: 'SNAKE', celeb: 'WHO AM I?' }
+const GAME_ICONS = { wordwalk: '🏠', shooter: '🛸', runner: '🏃', fruitslash: '🍉', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
+const GAME_NAMES = { wordwalk: 'WORD WALK', shooter: 'SPACE SHOOTER', runner: 'NEON RUNNER', fruitslash: 'FRUIT SLASH', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAG FRENZY', snake: 'SNAKE', celeb: 'WHO AM I?' }
 
 function timeAgo(ts) {
   const diff = Date.now() - ts
@@ -250,9 +250,12 @@ export default function Hub() {
                 {/* Games */}
                 <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">THE GAMES</p>
                 {[
-                  { icon: '⚡', name: 'MATH BLITZ', desc: 'Solve as many arithmetic equations as you can in 60 seconds. Pick the correct answer from 4 options. +10 for correct, –3 for wrong. Speed and accuracy win.' },
-                  { icon: '🐍', name: 'SNAKE', desc: 'Guide your snake to eat food and grow longer — without hitting walls or your own tail. The snake gets faster as you eat more. You have 60 seconds.' },
+                  { icon: '🏠', name: 'WORD WALK', desc: 'Complete the blanked-out word from 4 options to walk your character one step closer to home. 10 correct answers wins. Difficulty scales from easy 3-letter words up to 7+ letter hard ones. In battle mode — first to reach home wins.' },
+                  { icon: '🛸', name: 'SPACE SHOOTER', desc: 'Drag left and right to steer your ship, auto-fire is on. Destroy enemies before they reach the bottom — 3 enemy types get faster over time. 3 lives, 60 seconds.' },
+                  { icon: '🏃', name: 'NEON RUNNER', desc: 'Your character runs automatically. Tap JUMP (or top half of screen) to leap over obstacles — double jump allowed. Tap DUCK for flying drones. Score = distance survived.' },
+                  { icon: '🍉', name: 'FRUIT SLASH', desc: 'Swipe fast across flying fruit to slash it. Build combo streaks for ×2 and ×3 multipliers. Avoid the 💣 — hitting a bomb costs a life. 3 lives, 60 seconds.' },
                   { icon: '🏹', name: 'ARCHERY', desc: 'Pull the bowstring and aim your crosshair at the target — drag to aim, release to shoot. The longer you hold, the more your hand shakes. 10 shots, highest score wins.' },
+                  { icon: '🐍', name: 'SNAKE', desc: 'Guide your snake to eat food and grow longer — without hitting walls or your own tail. The snake gets faster as you eat more. You have 60 seconds.' },
                   { icon: '🌟', name: 'WHO AM I?', desc: 'Guess the celebrity from cryptic clues across movies, sports, music and TV. Answer on the first hint for 10 pts, reveal more hints for 6 or 3 pts. 10 rounds — perfect for battle mode!' },
                   { icon: '✏️', name: 'CROSSWORD', desc: 'Fill in the grid using the clues. Complete words earn points. Finish the whole puzzle for a bonus.' },
                   { icon: '🔍', name: 'WORD SEARCH', desc: 'Find all the hidden words in the grid before time runs out. Words go in any direction. Tap the first and last letter of each word.' },

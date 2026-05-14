@@ -1,4 +1,4 @@
-import MathBlitzGame  from './mathblitz/MathBlitzGame'
+import WordWalkGame   from './wordwalk/WordWalkGame'
 import ArcheryGame    from './archery/ArcheryGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
 import CrosswordGame  from './crossword/CrosswordGame'
@@ -10,10 +10,10 @@ import RunnerGame     from './runner/RunnerGame'
 import FruitSlashGame from './fruitslash/FruitSlashGame'
 
 export const GAME_REGISTRY = {
-  mathblitz: {
-    id: 'mathblitz', component: MathBlitzGame,
-    label: 'MATH BLITZ', desc: 'Answer correctly to build your rocket — first to launch wins',
-    icon: '🚀', tag: 'BUILD',
+  wordwalk: {
+    id: 'wordwalk', component: WordWalkGame,
+    label: 'WORD WALK', desc: 'Complete words to walk your character home — first to arrive wins',
+    icon: '🏠', tag: 'WORDS',
     color: '#00f5ff',
     gradient: 'linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,80,255,0.15))',
     border: 'rgba(0,245,255,0.45)',

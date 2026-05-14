@@ -156,7 +156,7 @@ export default function UserSetup() {
 
       {/* Logo */}
       <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8 relative z-10">
+        className="text-center mb-5 relative z-10">
         <div className="flex items-center justify-center gap-3 mb-1">
           <span className="text-4xl">🕹️</span>
           <h1 className="font-orbitron text-4xl font-black tracking-wider"
@@ -165,8 +165,55 @@ export default function UserSetup() {
           </h1>
         </div>
         <h2 className="font-orbitron text-xl font-bold neon-text-purple tracking-[0.5em]">DUELS</h2>
-        <p className="font-rajdhani text-gray-500 mt-1 text-xs tracking-widest">5 GAMES · SOLO · HEAD-TO-HEAD</p>
+        <p className="font-rajdhani text-gray-500 mt-1 text-xs tracking-widest">10 GAMES · SOLO · BATTLE · DAILY</p>
       </motion.div>
+
+      {/* Game showcase */}
+      {(screen === 'signup' || screen === 'signin') && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="relative z-10 w-full max-w-sm mb-5">
+
+          {/* Scrolling game icons */}
+          <div className="flex gap-2 overflow-x-auto pb-1 mb-3 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+            {[
+              { icon: '🏠', label: 'WORD WALK',    color: '#00f5ff' },
+              { icon: '🛸', label: 'SHOOTER',       color: '#00f5ff' },
+              { icon: '🏃', label: 'RUNNER',        color: '#00ff88' },
+              { icon: '🍉', label: 'FRUIT SLASH',   color: '#ff006e' },
+              { icon: '🏹', label: 'ARCHERY',       color: '#ffd700' },
+              { icon: '🐍', label: 'SNAKE',         color: '#00ff88' },
+              { icon: '🌟', label: 'WHO AM I?',     color: '#bf00ff' },
+              { icon: '✏️', label: 'CROSSWORD',     color: '#ffd700' },
+              { icon: '🔍', label: 'WORD SEARCH',   color: '#ff006e' },
+              { icon: '🌍', label: 'FLAG FRENZY',   color: '#bf00ff' },
+            ].map(g => (
+              <div key={g.label} className="flex-shrink-0 flex flex-col items-center gap-1 px-2 py-2 rounded-xl"
+                style={{ background: `${g.color}10`, border: `1px solid ${g.color}33`, minWidth: 58 }}>
+                <span style={{ fontSize: 20 }}>{g.icon}</span>
+                <p className="font-orbitron text-[7px] tracking-wider text-center leading-tight"
+                  style={{ color: g.color }}>{g.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Feature pills */}
+          <div className="flex flex-wrap gap-2 justify-center">
+            {[
+              { icon: '⭐', text: '10 GAMES', color: '#ffd700' },
+              { icon: '📈', text: 'DIFFICULTY SCALES', color: '#00ff88' },
+              { icon: '⚔️', text: 'REAL-TIME BATTLE', color: '#ff006e' },
+              { icon: '📅', text: 'DAILY CHALLENGE', color: '#bf00ff' },
+            ].map(f => (
+              <div key={f.text} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                style={{ background: `${f.color}0f`, border: `1px solid ${f.color}33` }}>
+                <span style={{ fontSize: 11 }}>{f.icon}</span>
+                <span className="font-orbitron text-[8px] tracking-widest" style={{ color: f.color }}>{f.text}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <AnimatePresence mode="wait">
 
