@@ -18,6 +18,9 @@ export default function GamePage() {
   const game          = GAME_REGISTRY[gameId]
   const GameComponent = game.component
 
+  const diffColor = difficulty === 'easy' ? '#00ff88' : difficulty === 'hard' ? '#ff006e' : '#ffd700'
+  const diffLabel = difficulty === 'easy' ? 'ROOKIE'  : difficulty === 'hard' ? 'VETERAN' : 'CHALLENGER'
+
   return (
     <div className="min-h-screen flex flex-col">
 
@@ -47,18 +50,11 @@ export default function GamePage() {
             SIGN UP →
           </button>
         ) : difficulty ? (
-          /* Show current difficulty badge once game is running */
-          {(() => {
-            const dc = difficulty === 'easy' ? '#00ff88' : difficulty === 'hard' ? '#ff006e' : '#ffd700'
-            const dl = difficulty === 'easy' ? 'ROOKIE' : difficulty === 'hard' ? 'VETERAN' : 'CHALLENGER'
-            return (
-              <span className="flex items-center gap-1 font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full"
-                style={{ color: dc, background: `${dc}12`, border: `1px solid ${dc}44` }}>
-                <DiffIcon level={difficulty} size={11} color={dc} strokeWidth={2} />
-                {dl}
-              </span>
-            )
-          })()}
+          <span className="flex items-center gap-1 font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full"
+            style={{ color: diffColor, background: `${diffColor}12`, border: `1px solid ${diffColor}44` }}>
+            <DiffIcon level={difficulty} size={11} color={diffColor} strokeWidth={2} />
+            {diffLabel}
+          </span>
         ) : (
           <div style={{ width: 72 }} />
         )}
