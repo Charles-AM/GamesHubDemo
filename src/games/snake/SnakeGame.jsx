@@ -339,16 +339,30 @@ export default function SnakeGame({ onFinish }) {
 
       {/* D-Pad */}
       <div className="mt-4 flex flex-col items-center gap-1">
-        <DPadBtn onClick={() => setDir(DIR.UP)}>▲</DPadBtn>
+        <DPadBtn onClick={() => setDir(DIR.UP)}><Arrow dir="up" /></DPadBtn>
         <div className="flex gap-1">
-          <DPadBtn onClick={() => setDir(DIR.LEFT)}>◀</DPadBtn>
+          <DPadBtn onClick={() => setDir(DIR.LEFT)}><Arrow dir="left" /></DPadBtn>
           <div className="w-12 h-12" />
-          <DPadBtn onClick={() => setDir(DIR.RIGHT)}>▶</DPadBtn>
+          <DPadBtn onClick={() => setDir(DIR.RIGHT)}><Arrow dir="right" /></DPadBtn>
         </div>
-        <DPadBtn onClick={() => setDir(DIR.DOWN)}>▼</DPadBtn>
+        <DPadBtn onClick={() => setDir(DIR.DOWN)}><Arrow dir="down" /></DPadBtn>
       </div>
 
     </div>
+  )
+}
+
+function Arrow({ dir }) {
+  const paths = {
+    up:    'M12 7 L5 17 L19 17 Z',
+    down:  'M12 17 L5 7 L19 7 Z',
+    left:  'M7 12 L17 5 L17 19 Z',
+    right: 'M17 12 L7 5 L7 19 Z',
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="#00ff88">
+      <path d={paths[dir]} />
+    </svg>
   )
 }
 
