@@ -7,7 +7,7 @@ const wasRecoveryLink = sessionStorage.getItem('arcadia_recovery') === '1'
 const Ctx = createContext()
 
 // ── XP & Levels ────────────────────────────────────────────
-export const XP_PER_LEVEL = 300
+export const XP_PER_LEVEL = 100
 export const getLevel       = (xp = 0) => Math.floor(xp / XP_PER_LEVEL) + 1
 export const getLevelPct    = (xp = 0) => (xp % XP_PER_LEVEL) / XP_PER_LEVEL
 export const getXpToNext    = (xp = 0) => XP_PER_LEVEL - (xp % XP_PER_LEVEL)
