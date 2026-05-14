@@ -144,136 +144,19 @@ button, [role="button"] {
   width: 100%;
 }
 
-/* ════════════════════════════════════════════════════
-   THEME SYSTEM — CSS custom properties
-   Switched by data-theme="light" on <html>
-   ════════════════════════════════════════════════════ */
-
-/* ── Dark (default) ─────────────────────────────── */
+/* ─── CSS custom properties (dark) ─────────────── */
 :root {
-  --page-bg:       #080818;
-  --surf-1:        rgba(255,255,255,0.03);   /* lowest card */
-  --surf-2:        rgba(255,255,255,0.06);   /* card */
-  --surf-3:        rgba(255,255,255,0.10);   /* elevated card / input */
-  --bdr-1:         rgba(255,255,255,0.06);   /* faintest border */
-  --bdr-2:         rgba(255,255,255,0.10);   /* normal border */
-  --bdr-3:         rgba(255,255,255,0.18);   /* strong border */
-  --txt-1:         #ffffff;
-  --txt-2:         #9ca3af;
-  --txt-3:         #4b5563;
-  --nav-bg:        rgba(8,8,24,0.95);
-  --nav-border:    rgba(255,255,255,0.08);
-  --input-bg:      rgba(255,255,255,0.06);
-  --input-border:  rgba(255,255,255,0.12);
-  --xp-track:      #1f2937;                  /* bg-gray-800 equivalent */
-  --scrollbar-bg:  #080818;
+  --surf-1:       rgba(255,255,255,0.03);
+  --surf-2:       rgba(255,255,255,0.06);
+  --surf-3:       rgba(255,255,255,0.10);
+  --bdr-1:        rgba(255,255,255,0.06);
+  --bdr-2:        rgba(255,255,255,0.10);
+  --bdr-3:        rgba(255,255,255,0.18);
+  --txt-1:        #ffffff;
+  --txt-2:        #9ca3af;
+  --txt-3:        #4b5563;
+  --nav-bg:       rgba(8,8,24,0.95);
+  --nav-border:   rgba(255,255,255,0.08);
+  --input-bg:     rgba(255,255,255,0.06);
+  --input-border: rgba(255,255,255,0.12);
 }
-
-/* ── Light ──────────────────────────────────────── */
-:root[data-theme="light"] {
-  --page-bg:       #eceaff;
-  --surf-1:        rgba(255,255,255,0.60);
-  --surf-2:        rgba(255,255,255,0.80);
-  --surf-3:        rgba(255,255,255,0.95);
-  --bdr-1:         rgba(0,0,0,0.08);
-  --bdr-2:         rgba(0,0,0,0.13);
-  --bdr-3:         rgba(0,0,0,0.22);
-  --txt-1:         #08061a;   /* near-black navy */
-  --txt-2:         #2d2b4a;   /* dark purple-gray */
-  --txt-3:         #5a5878;   /* mid gray — still clearly readable */
-  --nav-bg:        rgba(255,255,255,0.92);
-  --nav-border:    rgba(0,0,0,0.10);
-  --input-bg:      rgba(255,255,255,0.90);
-  --input-border:  rgba(0,0,0,0.16);
-  --xp-track:      rgba(0,0,0,0.12);
-  --scrollbar-bg:  #eceaff;
-}
-
-/* ── Apply page-bg + body text to body ─────────── */
-body { background-color: var(--page-bg); }
-:root[data-theme="light"] body { color: #08061a; }
-
-/* ── Scrollbar ──────────────────────────────────── */
-:root[data-theme="light"] ::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
-
-/* ── Tailwind text overrides (all gray shades) ──── */
-:root[data-theme="light"] .text-white    { color: #08061a !important; }
-:root[data-theme="light"] .text-gray-100 { color: #1a1830 !important; }
-:root[data-theme="light"] .text-gray-200 { color: #1a1830 !important; }
-:root[data-theme="light"] .text-gray-300 { color: #2d2b4a !important; }
-:root[data-theme="light"] .text-gray-400 { color: #2d2b4a !important; }
-:root[data-theme="light"] .text-gray-500 { color: #3d3b5a !important; }
-:root[data-theme="light"] .text-gray-600 { color: #4d4b6a !important; }
-:root[data-theme="light"] .text-gray-700 { color: #5a5878 !important; }
-:root[data-theme="light"] .bg-gray-800   { background-color: var(--xp-track) !important; }
-
-/* ── Force inline white / near-white colors ─────── */
-/* Any element where color is literally set to white via inline style
-   will still be white — we can't override inline styles with CSS.
-   The fix is to target specific known-white elements by font class   */
-:root[data-theme="light"] .font-orbitron,
-:root[data-theme="light"] .font-rajdhani {
-  color: inherit;
-}
-
-/* ── Inputs ──────────────────────────────────────── */
-:root[data-theme="light"] input::placeholder  { color: #8886aa !important; }
-:root[data-theme="light"] .border-gray-700    { border-color: rgba(0,0,0,0.20) !important; }
-:root[data-theme="light"] .border-gray-800    { border-color: rgba(0,0,0,0.16) !important; }
-:root[data-theme="light"] .bg-transparent     { background: rgba(255,255,255,0.75) !important; }
-:root[data-theme="light"] .placeholder-gray-700::placeholder { color: #8886aa !important; }
-
-/* ── Force readable color on any element that has   */
-/*    an inline white or near-white color value.     */
-/*    We target by common utility combos.            */
-:root[data-theme="light"] p,
-:root[data-theme="light"] span,
-:root[data-theme="light"] h1,
-:root[data-theme="light"] h2,
-:root[data-theme="light"] h3,
-:root[data-theme="light"] button,
-:root[data-theme="light"] label {
-  /* Don't override — just ensure inherited color is dark */
-  color: inherit;
-}
-
-/* The body sets a dark base color; anything that doesn't
-   override it inline will inherit correctly.           */
-
-/* ── Grid + scanline ────────────────────────────── */
-:root[data-theme="light"] .grid-bg {
-  background-image:
-    linear-gradient(rgba(100,60,200,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(100,60,200,0.04) 1px, transparent 1px);
-}
-:root[data-theme="light"] .scanlines::before {
-  background: rgba(100,60,200,0.05);
-}
-
-/* ── Orbs — softer in light ─────────────────────── */
-:root[data-theme="light"] .orb-cyan   {
-  background: radial-gradient(circle, rgba(0,180,240,0.20), transparent 70%);
-}
-:root[data-theme="light"] .orb-purple {
-  background: radial-gradient(circle, rgba(150,0,220,0.16), transparent 70%);
-}
-:root[data-theme="light"] .orb-pink   {
-  background: radial-gradient(circle, rgba(210,0,100,0.13), transparent 70%);
-}
-:root[data-theme="light"] .orb-green  {
-  background: radial-gradient(circle, rgba(0,190,110,0.14), transparent 70%);
-}
-
-/* ── Glass card ─────────────────────────────────── */
-:root[data-theme="light"] .glass-card {
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-/* ── Neon text — readable on light bg ──────────── */
-:root[data-theme="light"] .neon-text-cyan   { text-shadow: 0 0 8px rgba(0,200,255,0.5); }
-:root[data-theme="light"] .neon-text-purple { text-shadow: 0 0 8px rgba(160,0,255,0.5); }
-:root[data-theme="light"] .neon-text-pink   { text-shadow: 0 0 8px rgba(255,0,110,0.5); }
-:root[data-theme="light"] .neon-text-green  { text-shadow: 0 0 8px rgba(0,200,100,0.5); }
-:root[data-theme="light"] .neon-text-gold   { text-shadow: 0 0 8px rgba(255,200,0,0.5); }

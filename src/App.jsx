@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { UserProvider, useUser } from './context/UserContext'
-import { ThemeProvider } from './context/ThemeContext'
 import UserSetup    from './pages/UserSetup'
 import Hub          from './pages/Hub'
 import Profile      from './pages/Profile'
@@ -39,34 +38,42 @@ function AppRoutes() {
 
   if (loading) return <LoadingScreen />
 
-  const setupNeeded = !user || needsProfile || isPasswordRecovery
+  const needsSetupScreen = needsProfile || isPasswordRecovery
 
   return (
     <Routes>
-      <Route path="/"                    element={setupNeeded ? <UserSetup /> : <Navigate to="/hub" />} />
-      <Route path="/hub"                 element={setupNeeded ? <Navigate to="/" /> : <Hub />} />
-      <Route path="/profile"             element={setupNeeded ? <Navigate to="/" /> : <Profile />} />
-      <Route path="/game/:gameId/:mode"  element={setupNeeded ? <Navigate to="/" /> : <GamePage />} />
-      <Route path="/room"                element={setupNeeded ? <Navigate to="/" /> : <GameRoom />} />
-      <Route path="/admin"              element={<Admin />} />
-      <Route path="*"                    element={<Navigate to="/" />} />
+      {/* Auth / setup — always accessible */}
+      <Route path="/"   element={
+        needsSetupScreen ? <UserSetup /> :
+        user ? <Navigate to="/hub" /> :
+        <UserSetup />
+      } />
+
+      {/* Guest-accessible routes */}
+      <Route path="/hub"                element={needsSetupScreen ? <UserSetup /> : <Hub />} />
+      <Route path="/game/:gameId/:mode" element={needsSetupScreen ? <UserSetup /> : <GamePage />} />
+
+      {/* Login required */}
+      <Route path="/profile" element={needsSetupScreen || !user ? <Navigate to="/" /> : <Profile />} />
+      <Route path="/room"    element={needsSetupScreen || !user ? <Navigate to="/" /> : <GameRoom />} />
+
+      <Route path="/admin" element={<Admin />} />
+      <Route path="*"      element={<Navigate to="/" />} />
     </Routes>
   )
 }
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <UserProvider>
-        <BrowserRouter>
-          <div className="scanlines grid-bg min-h-screen">
-            <div className="relative mx-auto min-h-screen" style={{ maxWidth: 480 }}>
-              <LevelUpToast />
-              <Layout />
-            </div>
+    <UserProvider>
+      <BrowserRouter>
+        <div className="scanlines grid-bg min-h-screen">
+          <div className="relative mx-auto min-h-screen" style={{ maxWidth: 480 }}>
+            <LevelUpToast />
+            <Layout />
           </div>
-        </BrowserRouter>
-      </UserProvider>
-    </ThemeProvider>
+        </div>
+      </BrowserRouter>
+    </UserProvider>
   )
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useUser, AVATARS } from '../context/UserContext'
 
 const FLOATERS = ['🎮','🕹️','⚡','🏆','🎯','🌟','🔥','💥','🎲','👾']
@@ -21,6 +22,7 @@ const recordFailedAttempt = () => {
 export default function UserSetup() {
   const { signIn, signUp, signOut, createProfile, needsProfile,
           sendPasswordReset, updatePassword, isPasswordRecovery } = useUser()
+  const navigate = useNavigate()
 
   const [screen,   setScreen]   = useState(
     (isPasswordRecovery || sessionStorage.getItem('arcadia_recovery') === '1')
@@ -214,6 +216,21 @@ export default function UserSetup() {
                 No account? CREATE →
               </button>
             </div>
+
+            <div className="flex items-center gap-3 my-2">
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <span className="font-rajdhani text-[10px] text-gray-600">OR</span>
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+
+            <button onClick={() => navigate('/hub')}
+              className="w-full py-2.5 rounded-xl font-orbitron text-xs tracking-widest transition-all"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.10)', color: '#9ca3af' }}>
+              PLAY AS GUEST →
+            </button>
+            <p className="font-rajdhani text-[10px] text-gray-700 text-center mt-1.5">
+              Scores won't be saved · Battle mode requires an account
+            </p>
           </motion.div>
         )}
 
@@ -255,6 +272,21 @@ export default function UserSetup() {
               className="w-full py-2 font-orbitron text-xs text-gray-600 hover:text-gray-400 transition-colors">
               ← BACK TO SIGN IN
             </button>
+
+            <div className="flex items-center gap-3 my-2">
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <span className="font-rajdhani text-[10px] text-gray-600">OR</span>
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+
+            <button onClick={() => navigate('/hub')}
+              className="w-full py-2.5 rounded-xl font-orbitron text-xs tracking-widest transition-all"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.10)', color: '#9ca3af' }}>
+              PLAY AS GUEST →
+            </button>
+            <p className="font-rajdhani text-[10px] text-gray-700 text-center mt-1.5">
+              Scores won't be saved · Battle mode requires an account
+            </p>
           </motion.div>
         )}
 

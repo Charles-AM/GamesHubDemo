@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
-import { useTheme } from '../context/ThemeContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
 const GAME_ICONS = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
@@ -20,7 +19,6 @@ function timeAgo(ts) {
 
 export default function Hub() {
   const { user, scores, matchHistory, signOut: logout } = useUser()
-  const { isDark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [expandGame,  setExpandGame]  = useState(null)
   const [showHowTo,   setShowHowTo]   = useState(false)
@@ -68,73 +66,83 @@ export default function Hub() {
             className="font-orbitron text-[10px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1">
             ? HOW TO PLAY
           </button>
-          {/* Theme toggle */}
-          <button onClick={toggleTheme}
-            className="flex items-center justify-center rounded-xl transition-all"
-            style={{
-              width: 34, height: 34,
-              background: 'var(--surf-2)',
-              border: '1px solid var(--bdr-2)',
-              fontSize: 15,
-            }}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {isDark ? '☀️' : '🌙'}
-          </button>
-          <button onClick={logout}
-            className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors px-2 py-1">
-            EXIT ›
-          </button>
+          {user && (
+            <button onClick={logout}
+              className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors px-2 py-1">
+              EXIT ›
+            </button>
+          )}
         </div>
       </div>
 
       {/* ── Profile Card ── */}
       <div className="relative z-10 mx-4 mb-4">
-        <div className="rounded-2xl p-4 flex items-center gap-4"
-          style={{
-            background: 'linear-gradient(135deg, rgba(0,245,255,0.07), rgba(191,0,255,0.07))',
-            border: '1px solid var(--bdr-2)',
-            backdropFilter: 'blur(12px)',
-          }}>
-          {/* Avatar */}
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-            style={{ background: 'var(--surf-2)', border: '1px solid var(--bdr-2)' }}>
-            {user?.avatar || '🎮'}
-          </div>
+        {user ? (
+          <div className="rounded-2xl p-4 flex items-center gap-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,245,255,0.07), rgba(191,0,255,0.07))',
+              border: '1px solid rgba(255,255,255,0.10)',
+              backdropFilter: 'blur(12px)',
+            }}>
+            {/* Avatar */}
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
+              {user.avatar}
+            </div>
 
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="font-orbitron text-sm font-black text-white truncate">{user?.username}</p>
-              <span className="font-orbitron text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0"
-                style={{ background: 'rgba(0,245,255,0.15)', color: '#00f5ff', border: '1px solid rgba(0,245,255,0.3)' }}>
-                LV.{level}
-              </span>
-            </div>
-            {/* XP bar */}
-            <div className="h-1.5 bg-gray-800 rounded-full mb-1.5 overflow-hidden">
-              <motion.div className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #00f5ff, #bf00ff)' }}
-                initial={{ width: 0 }} animate={{ width: `${pct * 100}%` }}
-                transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }} />
-            </div>
-            <div className="flex items-center gap-3">
-              <p className="font-rajdhani text-[10px] text-gray-500">{xp} XP</p>
-              {user?.streak?.count > 0 && (
-                <span className="font-orbitron text-[10px]" style={{ color: '#ffd700' }}>
-                  🔥 {user.streak.count} day streak
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="font-orbitron text-sm font-black text-white truncate">{user.username}</p>
+                <span className="font-orbitron text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                  style={{ background: 'rgba(0,245,255,0.15)', color: '#00f5ff', border: '1px solid rgba(0,245,255,0.3)' }}>
+                  LV.{level}
                 </span>
-              )}
+              </div>
+              {/* XP bar */}
+              <div className="h-1.5 bg-gray-800 rounded-full mb-1.5 overflow-hidden">
+                <motion.div className="h-full rounded-full"
+                  style={{ background: 'linear-gradient(90deg, #00f5ff, #bf00ff)' }}
+                  initial={{ width: 0 }} animate={{ width: `${pct * 100}%` }}
+                  transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }} />
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="font-rajdhani text-[10px] text-gray-500">{xp} XP</p>
+                {user.streak?.count > 0 && (
+                  <span className="font-orbitron text-[10px]" style={{ color: '#ffd700' }}>
+                    🔥 {user.streak.count} day streak
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Quick stats */}
+            <div className="flex-shrink-0 text-right">
+              <p className="font-orbitron text-xs font-bold text-white">{totalPlays}</p>
+              <p className="font-rajdhani text-[10px] text-gray-500">PLAYED</p>
+              <p className="font-orbitron text-xs font-bold mt-1" style={{ color: '#ffd700' }}>{totalWins}</p>
+              <p className="font-rajdhani text-[10px] text-gray-500">WINS</p>
             </div>
           </div>
-
-          {/* Quick stats */}
-          <div className="flex-shrink-0 text-right">
-            <p className="font-orbitron text-xs font-bold text-white">{totalPlays}</p>
-            <p className="font-rajdhani text-[10px] text-gray-500">PLAYED</p>
-            <p className="font-orbitron text-xs font-bold mt-1" style={{ color: '#ffd700' }}>{totalWins}</p>
-            <p className="font-rajdhani text-[10px] text-gray-500">WINS</p>
+        ) : (
+          /* Guest banner */
+          <div className="rounded-2xl p-4 flex items-center gap-4"
+            style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.2)' }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              👤
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-orbitron text-sm font-black text-white mb-0.5">GUEST</p>
+              <p className="font-rajdhani text-xs text-gray-500">Sign up to save scores &amp; battle friends</p>
+            </div>
+            <button onClick={() => navigate('/')}
+              className="font-orbitron text-[10px] px-3 py-2 rounded-xl flex-shrink-0"
+              style={{ background: 'rgba(0,245,255,0.1)', border: '1px solid rgba(0,245,255,0.4)', color: '#00f5ff' }}>
+              SIGN UP
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ── Daily Challenge ── */}

@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getXpToNext, XP_PER_LEVEL } from '../context/UserContext'
-import { useTheme } from '../context/ThemeContext'
 import { GAME_LIST } from '../games/gameRegistry'
 
 function timeAgo(ts) {
@@ -21,7 +20,6 @@ const GAME_NAME  = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CR
 
 export default function Profile() {
   const { user, scores, matchHistory, deleteAccount, signOut } = useUser()
-  const { isDark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteInput,     setDeleteInput]     = useState('')
@@ -61,18 +59,8 @@ export default function Profile() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 relative z-10">
+      <div className="flex items-center mb-6 relative z-10">
         <p className="font-orbitron text-xs text-gray-500 tracking-widest">PROFILE</p>
-        <button onClick={toggleTheme}
-          className="flex items-center justify-center rounded-xl transition-all"
-          style={{
-            width: 34, height: 34,
-            background: 'var(--surf-2)',
-            border: '1px solid var(--bdr-2)',
-            fontSize: 15,
-          }}>
-          {isDark ? '☀️' : '🌙'}
-        </button>
       </div>
 
       {/* Hero card */}
