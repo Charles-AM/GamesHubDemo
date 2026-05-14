@@ -166,6 +166,21 @@ const GAME_ICONS = {
     </>
   ),
 
+  soccer: ({ c }) => (
+    <>
+      {/* Ball */}
+      <circle cx="12" cy="13" r="8" />
+      {/* Pentagon patches */}
+      <path d="M12 5.5L14.5 8l-1 3.5H10.5L9.5 8Z" strokeWidth="1" />
+      <path d="M9.5 8L7 9.5l-.5 3 2.5 2" strokeWidth="1" />
+      <path d="M14.5 8L17 9.5l.5 3-2.5 2" strokeWidth="1" />
+      {/* Goal posts */}
+      <line x1="2" y1="2" x2="2" y2="8" strokeWidth="2" />
+      <line x1="22" y1="2" x2="22" y2="8" strokeWidth="2" />
+      <line x1="2" y1="2" x2="22" y2="2" strokeWidth="2" />
+    </>
+  ),
+
   hoops: ({ c }) => (
     <>
       {/* Backboard */}

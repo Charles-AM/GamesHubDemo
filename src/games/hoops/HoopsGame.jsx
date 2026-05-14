@@ -3,116 +3,127 @@ import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../context/UserContext'
 import ResultScreen from '../../components/ResultScreen'
 
+/* ─── Canvas ─────────────────────────────────────────────────────────── */
 const W = 390
-const H = 520       // canvas height — power bar sits below in HTML
+const H = 580
 
-const GRAVITY     = 0.52
-const LAUNCH_X    = W / 2
-const LAUNCH_Y    = H - 60      // ball resting position
-const HOOP_Y      = 155         // rim height on canvas
-const HOOP_TRAVEL = 120         // how far the hoop swings from center
+const GRAVITY     = 0.45          // px / frame²
+const SWIPE_FACTOR = 0.21         // maps swipe px → velocity
+const MAX_SPEED   = 22            // cap so wild swipes don't teleport
 
-// VY needed so ball peaks exactly at HOOP_Y when power = 50%
-// peak: LAUNCH_Y - vy² / (2*GRAVITY) = HOOP_Y  →  vy = sqrt(2*G*(LAUNCH_Y-HOOP_Y))
-const VY_OPTIMAL  = Math.sqrt(2 * GRAVITY * (LAUNCH_Y - HOOP_Y))   // ≈ 17.1
+/* Ball start */
+const LAUNCH_X = 195
+const LAUNCH_Y = 490
+
+/* Hoop */
+const HOOP_Y      = 175           // rim Y
+const HOOP_CENTER = W / 2         // hoop oscillates around this
+const HOOP_TRAVEL = 100           // ±px from center
+const RIM_HALF    = 28            // half-rim width (ball must thread this)
+const NET_DEPTH   = 38            // how long the net hangs below rim
 
 const GAME_DURATION = 60
 
 const DIFF = {
-  easy:   { rimHalfWidth: 42, hoopSpeed: 1.2, fillTime: 2.4, sweetMin: 32, sweetMax: 68, label: 'ROOKIE'     },
-  medium: { rimHalfWidth: 32, hoopSpeed: 2.0, fillTime: 1.7, sweetMin: 38, sweetMax: 62, label: 'CHALLENGER' },
-  hard:   { rimHalfWidth: 23, hoopSpeed: 3.0, fillTime: 1.2, sweetMin: 43, sweetMax: 57, label: 'VETERAN'    },
+  easy:   { rimHalf: 36, hoopSpeed: 1.0, label: 'ROOKIE'     },
+  medium: { rimHalf: 28, hoopSpeed: 1.8, label: 'CHALLENGER' },
+  hard:   { rimHalf: 20, hoopSpeed: 2.8, label: 'VETERAN'    },
 }
 
-function powerToVy(power) {
-  // power 0-100 → vy (negative = upward)
-  // at 50%: peaks at HOOP_Y; at 100%: massive overshoot; at 0%: no height
-  return -(power / 50) * VY_OPTIMAL
-}
-
-function initState(cfg) {
-  return {
-    ball:       { x: LAUNCH_X, y: LAUNCH_Y, vy: 0, flying: false, scored: false },
-    hoop:       { cx: W / 2, phase: 0 },
-    score:      0,
-    made:       0,
-    attempted:  0,
-    streak:     0,
-    timeLeft:   GAME_DURATION,
-    pointsFlash: 0,
-    lastPoints:  0,
-    missFlash:   0,
-  }
-}
-
-/* ── Draw helpers ───────────────────────────────────────────────────────────── */
+/* ─── Draw helpers ───────────────────────────────────────────────────── */
 
 function drawCourt(ctx) {
-  // Floor
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)'
-  ctx.lineWidth = 1
-  ctx.beginPath(); ctx.moveTo(0, H - 30); ctx.lineTo(W, H - 30); ctx.stroke()
-  // Three-point arc
-  ctx.beginPath(); ctx.arc(W / 2, H - 30, 200, Math.PI, 0); ctx.stroke()
-  // Lane
-  ctx.strokeRect(118, H - 30, 154, -100)
-  // Free throw circle
-  ctx.beginPath(); ctx.arc(W / 2, H - 130, 48, Math.PI, 0); ctx.stroke()
+  // Hardwood floor gradient
+  const floor = ctx.createLinearGradient(0, H - 90, 0, H)
+  floor.addColorStop(0, '#3d1f00')
+  floor.addColorStop(1, '#2a1500')
+  ctx.fillStyle = floor; ctx.fillRect(0, H - 90, W, 90)
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5
+  ctx.strokeRect(60, H - 90, W - 120, 84)
+  ctx.beginPath(); ctx.arc(W / 2, H - 90, 50, Math.PI, 0); ctx.stroke()
+
+  // Backboard support pole (top-right)
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 3
+  ctx.beginPath(); ctx.moveTo(320, 30); ctx.lineTo(320, HOOP_Y); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(320, HOOP_Y); ctx.lineTo(W / 2 + DIFF.medium.rimHalf, HOOP_Y); ctx.stroke()
+
+  // Dark sky bg
+  const sky = ctx.createLinearGradient(0, 0, 0, H - 90)
+  sky.addColorStop(0, '#08081a')
+  sky.addColorStop(1, '#0d0d22')
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H - 90)
 }
 
-function drawHoop(ctx, cx, rimHW) {
-  // Backboard
-  const bx = cx + rimHW - 2
-  ctx.fillStyle = 'rgba(255,255,255,0.10)'
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)'
-  ctx.lineWidth = 1.5
-  ctx.fillRect(bx, HOOP_Y - 38, 46, 40)
-  ctx.strokeRect(bx, HOOP_Y - 38, 46, 40)
-  ctx.strokeStyle = 'rgba(255,255,255,0.38)'
-  ctx.strokeRect(bx + 8, HOOP_Y - 26, 30, 24)
+function drawHoop(ctx, cx, rh) {
+  // Backboard (top-right area)
+  const bbX = cx + rh + 2
+  ctx.fillStyle = 'rgba(255,255,255,0.09)'
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.5
+  ctx.fillRect(bbX, HOOP_Y - 44, 48, 44)
+  ctx.strokeRect(bbX, HOOP_Y - 44, 48, 44)
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+  ctx.strokeRect(bbX + 8, HOOP_Y - 30, 32, 26)
 
-  // Support arm
-  ctx.beginPath()
-  ctx.moveTo(bx, HOOP_Y + 1); ctx.lineTo(cx + rimHW, HOOP_Y + 1)
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke()
+  // Arm
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2.5
+  ctx.beginPath(); ctx.moveTo(bbX, HOOP_Y); ctx.lineTo(cx + rh, HOOP_Y); ctx.stroke()
 
-  // Rim with glow
-  ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 12
-  ctx.beginPath(); ctx.moveTo(cx - rimHW, HOOP_Y); ctx.lineTo(cx + rimHW, HOOP_Y)
-  ctx.strokeStyle = '#ff6b00'; ctx.lineWidth = 4; ctx.stroke()
+  // Rim (glowing orange)
+  ctx.shadowColor = '#ff6200'; ctx.shadowBlur = 14
+  ctx.strokeStyle = '#ff6200'; ctx.lineWidth = 5
+  ctx.beginPath(); ctx.moveTo(cx - rh, HOOP_Y); ctx.lineTo(cx + rh, HOOP_Y); ctx.stroke()
   ctx.shadowBlur = 0
 
-  // Net zigzag
-  const steps = 8
-  const sw = (rimHW * 2) / steps
-  const nh = 28
+  // Net — zigzag from both rim ends, converging at bottom centre
+  const steps = 9
+  ctx.strokeStyle = 'rgba(220,220,220,0.42)'; ctx.lineWidth = 1.2
   ctx.beginPath()
+  const netW = rh * 2
+  const botX = cx
+  const botY = HOOP_Y + NET_DEPTH
   for (let i = 0; i <= steps; i++) {
-    const nx = cx - rimHW + i * sw
-    const ny = HOOP_Y + (i % 2 === 0 ? 2 : nh * 0.62)
+    const t  = i / steps
+    const nx = (cx - rh) + t * netW
+    const ny = HOOP_Y + (i % 2 === 0 ? 4 : NET_DEPTH * 0.58)
     i === 0 ? ctx.moveTo(nx, ny) : ctx.lineTo(nx, ny)
   }
-  for (let i = steps; i >= 0; i--) {
-    ctx.lineTo(cx - rimHW + i * sw, HOOP_Y + nh * 0.55 + (i % 2 === 0 ? nh * 0.45 : 0))
+  ctx.stroke()
+  // Converging vertical lines to bottom point
+  for (let i = 0; i <= steps; i += 2) {
+    const t  = i / steps
+    const nx = (cx - rh) + t * netW
+    const ny = HOOP_Y + 4
+    ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(botX, botY); ctx.stroke()
   }
-  ctx.strokeStyle = 'rgba(180,180,180,0.38)'; ctx.lineWidth = 1; ctx.stroke()
 }
 
 function drawBall(ctx, x, y) {
-  const r = 17
+  const r = 18
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2)
-  ctx.fillStyle = '#e8740a'
-  ctx.shadowColor = '#ff8c00'; ctx.shadowBlur = 18
+  ctx.fillStyle   = '#e8740a'
+  ctx.shadowColor = '#ff8c00'; ctx.shadowBlur = 16
   ctx.fill(); ctx.shadowBlur = 0
-  // Seams
-  ctx.strokeStyle = 'rgba(0,0,0,0.42)'; ctx.lineWidth = 1.8
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1.8
   ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.stroke()
   ctx.beginPath(); ctx.arc(x, y, r, -Math.PI/2, Math.PI/2); ctx.stroke()
-  ctx.beginPath(); ctx.arc(x, y - 8, 14, 0, Math.PI); ctx.stroke()
-  ctx.beginPath(); ctx.arc(x, y + 8, 14, Math.PI, 0); ctx.stroke()
+  ctx.beginPath(); ctx.arc(x, y - 9, 15, 0, Math.PI); ctx.stroke()
+  ctx.beginPath(); ctx.arc(x, y + 9, 15, Math.PI, 0); ctx.stroke()
 }
 
-/* ── Component ──────────────────────────────────────────────────────────────── */
+/* Simulate parabola, return point array */
+function simArc(x, y, vx, vy, frames = 80) {
+  const pts = []
+  let px = x, py = y, pvx = vx, pvy = vy
+  for (let i = 0; i < frames; i++) {
+    pvy += GRAVITY; px += pvx; py += pvy
+    if (py > H + 30 || px < -40 || px > W + 40) break
+    pts.push({ x: px, y: py })
+  }
+  return pts
+}
+
+/* ─── Component ──────────────────────────────────────────────────────── */
 
 export default function HoopsGame({ difficulty = 'medium' }) {
   const navigate = useNavigate()
@@ -120,123 +131,146 @@ export default function HoopsGame({ difficulty = 'medium' }) {
   const cfg = DIFF[difficulty] || DIFF.medium
 
   const canvasRef   = useRef(null)
-  const stRef       = useRef(initState(cfg))
+  const stRef       = useRef(null)
   const rafRef      = useRef(null)
   const lastTimeRef = useRef(null)
 
-  // Power charging state (read by RAF loop, written by pointer events)
-  const chargingRef  = useRef(false)
-  const powerRef     = useRef(0)   // 0-100
+  const dragRef = useRef({ active: false, sx: 0, sy: 0, cx: 0, cy: 0 })
 
-  // React state — only for re-rendering the power bar and phase
-  const [power,    setPower]    = useState(0)
-  const [charging, setCharging] = useState(false)
-  const [phase,    setPhase]    = useState('playing')
-  const [finals,   setFinals]   = useState({ score: 0, made: 0, att: 0 })
+  const [phase,  setPhase]  = useState('playing')
+  const [finals, setFinals] = useState({ score: 0, made: 0, att: 0 })
+
+  const mkState = useCallback(() => ({
+    ball:      { x: LAUNCH_X, y: LAUNCH_Y, vx: 0, vy: 0, flying: false, scored: false },
+    hoop:      { cx: HOOP_CENTER, phase: 0 },
+    score:     0,
+    made:      0,
+    attempted: 0,
+    streak:    0,
+    timeLeft:  GAME_DURATION,
+    flash:     0,
+    flashPts:  0,
+    missFlash: 0,
+  }), [])
+
+  useEffect(() => { stRef.current = mkState() }, [mkState])
 
   const resetGame = useCallback(() => {
-    stRef.current   = initState(cfg)
+    stRef.current   = mkState()
     lastTimeRef.current = null
-    chargingRef.current = false
-    powerRef.current    = 0
-    setPower(0)
-    setCharging(false)
+    dragRef.current = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 }
     setPhase('playing')
-  }, [cfg])
+  }, [mkState])
 
-  // Start charge
-  const handleDown = useCallback((e) => {
+  /* ── Pointer ── */
+  const onDown = useCallback((e) => {
     e.preventDefault()
-    if (stRef.current.ball.flying) return
-    chargingRef.current = true
-    powerRef.current    = 0
-    setPower(0)
-    setCharging(true)
+    if (stRef.current?.ball.flying) return
+    const rect = canvasRef.current.getBoundingClientRect()
+    const sx = (e.clientX - rect.left) * (W / rect.width)
+    const sy = (e.clientY - rect.top)  * (H / rect.height)
+    dragRef.current = { active: true, sx, sy, cx: sx, cy: sy }
   }, [])
 
-  // Release — fire the ball
-  const handleUp = useCallback((e) => {
+  const onMove = useCallback((e) => {
+    e.preventDefault()
+    if (!dragRef.current.active) return
+    const rect = canvasRef.current.getBoundingClientRect()
+    dragRef.current.cx = (e.clientX - rect.left) * (W / rect.width)
+    dragRef.current.cy = (e.clientY - rect.top)  * (H / rect.height)
+  }, [])
+
+  const onUp = useCallback((e) => {
     e?.preventDefault()
-    if (!chargingRef.current) return
-    chargingRef.current = false
-    setCharging(false)
+    const drag = dragRef.current
+    if (!drag.active) return
+    drag.active = false
 
     const st = stRef.current
-    if (st.ball.flying) return
+    if (!st || st.ball.flying) return
 
-    const p  = powerRef.current
-    const vy = powerToVy(p)
-    st.ball  = { x: LAUNCH_X, y: LAUNCH_Y, vy, flying: true, scored: false }
+    const dx = drag.cx - drag.sx
+    const dy = drag.cy - drag.sy
+    if (dy > -25) return   // must swipe upward
+
+    let vx = dx * SWIPE_FACTOR
+    let vy = dy * SWIPE_FACTOR
+    const spd = Math.hypot(vx, vy)
+    if (spd > MAX_SPEED) { vx = vx / spd * MAX_SPEED; vy = vy / spd * MAX_SPEED }
+
+    st.ball   = { x: LAUNCH_X, y: LAUNCH_Y, vx, vy, flying: true, scored: false }
     st.attempted += 1
-    // Store power for scoring check
-    st._launchPower = p
   }, [])
 
-  /* ── Main RAF loop ── */
+  /* ── RAF loop ── */
   useEffect(() => {
     if (phase !== 'playing') return
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
 
-    function tick(timestamp) {
-      if (!lastTimeRef.current) lastTimeRef.current = timestamp
-      const dt = Math.min((timestamp - lastTimeRef.current) / 16.67, 3)
-      lastTimeRef.current = timestamp
+    function tick(ts) {
+      if (!lastTimeRef.current) lastTimeRef.current = ts
+      const dt = Math.min((ts - lastTimeRef.current) / 16.67, 3)
+      lastTimeRef.current = ts
 
-      const st = stRef.current
+      const st   = stRef.current
+      const drag = dragRef.current
 
-      /* ── Charge power ── */
-      if (chargingRef.current && !st.ball.flying) {
-        const increment = (100 / (cfg.fillTime * 60)) * dt
-        const next = Math.min(100, powerRef.current + increment)
-        powerRef.current = next
-        setPower(next)
-      }
-
-      /* ── Move hoop ── */
+      /* Hoop oscillate */
       st.hoop.phase += cfg.hoopSpeed * 0.018 * dt
-      st.hoop.cx     = W / 2 + Math.sin(st.hoop.phase) * HOOP_TRAVEL
+      st.hoop.cx     = HOOP_CENTER + Math.sin(st.hoop.phase) * HOOP_TRAVEL
 
-      /* ── Ball physics ── */
+      /* Ball physics */
       if (st.ball.flying) {
         st.ball.vy += GRAVITY * dt
+        st.ball.x  += st.ball.vx * dt
         st.ball.y  += st.ball.vy * dt
-        // vx = 0, ball goes straight up from center
 
-        // Score detection: ball crosses HOOP_Y going upward
+        /* Score check: ball passes through rim going UPWARD */
         if (!st.ball.scored && st.ball.vy < 0 &&
-            st.ball.y <= HOOP_Y + 5 && st.ball.y >= HOOP_Y - 22) {
-          const pwr      = st._launchPower ?? 0
-          const inSweet  = pwr >= cfg.sweetMin && pwr <= cfg.sweetMax
-          const dist     = Math.abs(LAUNCH_X - st.hoop.cx)
-          const aligned  = dist <= cfg.rimHalfWidth
-
-          if (inSweet && aligned) {
-            const isSwish  = dist < cfg.rimHalfWidth * 0.4 && Math.abs(pwr - 50) < 6
-            const pts      = isSwish ? 3 : 2
-            st.score      += pts
-            st.made       += 1
-            st.streak     += 1
-            st.lastPoints  = pts
-            st.pointsFlash = 55
+            st.ball.y <= HOOP_Y + 6 && st.ball.y >= HOOP_Y - 20) {
+          const dist = Math.abs(st.ball.x - st.hoop.cx)
+          if (dist < cfg.rimHalf - 6) {
+            const isSwish = dist < cfg.rimHalf * 0.35
+            const pts     = isSwish ? 3 : 2
+            st.score  += pts
+            st.made   += 1
+            st.streak += 1
+            st.flashPts = pts
+            st.flash    = 65
             st.ball.scored = true
-          } else if (!aligned || !inSweet) {
-            st.streak    = 0
-            st.missFlash = 30
-            st.ball.scored = false // will still fly off
           }
         }
 
-        // Reset ball after it leaves canvas
-        if (st.ball.y > H + 50) {
-          st.ball = { x: LAUNCH_X, y: LAUNCH_Y, vy: 0, flying: false, scored: false }
-          powerRef.current = 0
-          setPower(0)
+        /* Ball hits rim edge → deflect */
+        if (!st.ball.scored && st.ball.vy < 0 &&
+            st.ball.y >= HOOP_Y - 20 && st.ball.y <= HOOP_Y + 6) {
+          const distL = Math.abs(st.ball.x - (st.hoop.cx - cfg.rimHalf))
+          const distR = Math.abs(st.ball.x - (st.hoop.cx + cfg.rimHalf))
+          if (distL < 8) { st.ball.vx = -Math.abs(st.ball.vx) * 0.5; st.ball.vy *= 0.6 }
+          if (distR < 8) { st.ball.vx =  Math.abs(st.ball.vx) * 0.5; st.ball.vy *= 0.6 }
+        }
+
+        /* Miss: scored but still flying — track through net */
+        if (st.ball.scored && st.ball.vy > 0 && st.ball.y > HOOP_Y + NET_DEPTH + 10) {
+          st.ball = { x: LAUNCH_X, y: LAUNCH_Y, vx: 0, vy: 0, flying: false, scored: false }
+        }
+
+        /* Off screen → miss */
+        if (!st.ball.scored &&
+            (st.ball.y > H + 40 || st.ball.y < -60 || st.ball.x < -40 || st.ball.x > W + 40)) {
+          st.streak   = 0
+          st.missFlash = 35
+          st.ball = { x: LAUNCH_X, y: LAUNCH_Y, vx: 0, vy: 0, flying: false, scored: false }
         }
       }
 
-      /* ── Timer ── */
+      /* Flash decay */
+      if (st.flash     > 0) st.flash    -= dt
+      if (st.missFlash > 0) st.missFlash -= dt
+
+      /* Timer */
       st.timeLeft -= dt / 60
       if (st.timeLeft <= 0) {
         recordGame?.({ game: 'hoops', score: st.score, mode: 'solo', won: st.score > 0 })
@@ -245,72 +279,78 @@ export default function HoopsGame({ difficulty = 'medium' }) {
         return
       }
 
-      /* ── Flash decay ── */
-      if (st.pointsFlash > 0) st.pointsFlash -= dt
-      if (st.missFlash   > 0) st.missFlash   -= dt
-
       /* ── Draw ── */
-      ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = '#080818'; ctx.fillRect(0, 0, W, H)
       drawCourt(ctx)
-      drawHoop(ctx, st.hoop.cx, cfg.rimHalfWidth)
+      drawHoop(ctx, st.hoop.cx, cfg.rimHalf)
 
-      // Alignment guide — subtle vertical line showing ball's path
-      if (!st.ball.flying) {
-        ctx.setLineDash([4, 10])
-        ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1
-        ctx.beginPath(); ctx.moveTo(LAUNCH_X, LAUNCH_Y - 22); ctx.lineTo(LAUNCH_X, HOOP_Y); ctx.stroke()
-        ctx.setLineDash([])
-        // Pulse ring on rim when hoop is aligned
-        const d = Math.abs(LAUNCH_X - st.hoop.cx)
-        if (d <= cfg.rimHalfWidth) {
-          const intensity = 1 - d / cfg.rimHalfWidth
-          ctx.beginPath(); ctx.arc(LAUNCH_X, HOOP_Y, 12, 0, Math.PI * 2)
-          ctx.fillStyle = `rgba(0,255,136,${0.18 + intensity * 0.35})`; ctx.fill()
+      /* Trajectory preview while dragging */
+      if (drag.active && !st.ball.flying) {
+        const dx = drag.cx - drag.sx
+        const dy = drag.cy - drag.sy
+        if (dy < -25) {
+          let pvx = dx * SWIPE_FACTOR
+          let pvy = dy * SWIPE_FACTOR
+          const spd = Math.hypot(pvx, pvy)
+          if (spd > MAX_SPEED) { pvx = pvx/spd*MAX_SPEED; pvy = pvy/spd*MAX_SPEED }
+          const pts = simArc(LAUNCH_X, LAUNCH_Y, pvx, pvy)
+          pts.forEach((p, i) => {
+            if (i % 5 === 0) {
+              const a = 0.6 - (i / pts.length) * 0.5
+              ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2)
+              ctx.fillStyle = `rgba(255,215,0,${a})`; ctx.fill()
+            }
+          })
         }
       }
 
       drawBall(ctx, st.ball.x, st.ball.y)
 
-      // Points / miss flash
-      if (st.pointsFlash > 0) {
-        const a   = Math.min(1, st.pointsFlash / 30)
-        const rise = (55 - st.pointsFlash) * 1.1
-        ctx.fillStyle = `rgba(255,215,0,${a})`
-        ctx.font = `bold ${26 + (55 - st.pointsFlash) * 0.35}px monospace`
-        ctx.textAlign = 'center'
-        ctx.fillText(`+${st.lastPoints}`, LAUNCH_X, HOOP_Y - 28 - rise)
+      /* Glow behind hoop when aligned */
+      const dist2 = Math.abs(st.hoop.cx - LAUNCH_X)
+      if (dist2 < cfg.rimHalf && !st.ball.flying) {
+        ctx.beginPath(); ctx.arc(LAUNCH_X, HOOP_Y, 14, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(0,255,136,${0.2 * (1 - dist2 / cfg.rimHalf)})`; ctx.fill()
+      }
+
+      /* Points float */
+      if (st.flash > 0) {
+        const a   = Math.min(1, st.flash / 30)
+        const rise = (65 - st.flash) * 1.2
+        ctx.fillStyle   = `rgba(255,215,0,${a})`
+        ctx.font        = `bold ${24 + rise * 0.2}px monospace`
+        ctx.textAlign   = 'center'
+        ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 12
+        ctx.fillText(`+${st.flashPts}`, st.hoop.cx, HOOP_Y - 22 - rise)
+        ctx.shadowBlur  = 0
       }
       if (st.missFlash > 0) {
-        const a = st.missFlash / 30
-        ctx.fillStyle = `rgba(255,0,110,${a})`
-        ctx.font = 'bold 20px monospace'; ctx.textAlign = 'center'
-        ctx.fillText('MISS', LAUNCH_X, HOOP_Y - 22)
+        const a = st.missFlash / 35
+        ctx.fillStyle = `rgba(255,0,110,${a})`; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'center'
+        ctx.fillText('MISS', LAUNCH_X, HOOP_Y - 30)
       }
 
-      // HUD
-      ctx.shadowBlur = 0
-      ctx.fillStyle  = '#ffd700'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'left'
+      /* HUD */
+      ctx.fillStyle = '#ffd700'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'left'
       ctx.fillText(`${st.score} PTS`, 14, 26)
-
       if (st.streak >= 3) {
         ctx.fillStyle = '#ff006e'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'right'
-        ctx.fillText(`${st.streak} STREAK`, W - 14, 26)
+        ctx.fillText(`${st.streak} IN A ROW`, W - 14, 26)
       } else {
         ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.font = '10px monospace'; ctx.textAlign = 'right'
         ctx.fillText(`${st.made}/${st.attempted}`, W - 14, 26)
       }
-
-      // Timer bar
-      const ratio = Math.max(0, st.timeLeft / GAME_DURATION)
+      const ratio  = Math.max(0, st.timeLeft / GAME_DURATION)
       const barClr = ratio > 0.4 ? '#ffd700' : ratio > 0.2 ? '#ff8c00' : '#ff006e'
       ctx.fillStyle = 'rgba(255,215,0,0.10)'; ctx.fillRect(0, H - 4, W, 4)
       ctx.fillStyle = barClr; ctx.fillRect(0, H - 4, W * ratio, 4)
-
-      // Timer text
-      ctx.fillStyle = ratio < 0.2 ? '#ff006e' : 'rgba(255,255,255,0.22)'
-      ctx.font = '10px monospace'; ctx.textAlign = 'center'
+      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'
       ctx.fillText(`${Math.ceil(st.timeLeft)}s`, W / 2, 26)
+
+      /* Swipe hint */
+      if (st.timeLeft > GAME_DURATION - 3 && !st.ball.flying) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '11px monospace'; ctx.textAlign = 'center'
+        ctx.fillText('SWIPE UP TO SHOOT', W / 2, H - 110)
+      }
 
       rafRef.current = requestAnimationFrame(tick)
     }
@@ -337,120 +377,23 @@ export default function HoopsGame({ difficulty = 'medium' }) {
     )
   }
 
-  /* ── Power bar colors ── */
-  const pct       = power
-  const inSweet   = pct >= cfg.sweetMin && pct <= cfg.sweetMax
-  const barColor  = pct < cfg.sweetMin - 8
-    ? '#ff006e'
-    : inSweet
-      ? '#00ff88'
-      : pct > cfg.sweetMax + 8
-        ? '#ff006e'
-        : '#ffd700'
-
   return (
-    <div className="flex flex-col items-center" style={{ background: '#080818', minHeight: '100vh' }}>
+    <div style={{ background: '#08081a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <canvas
         ref={canvasRef}
-        width={W}
-        height={H}
-        style={{ display: 'block', maxWidth: '100%', touchAction: 'none' }}
+        width={W} height={H}
+        style={{ display: 'block', maxWidth: '100%', touchAction: 'none', cursor: 'crosshair' }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerLeave={onUp}
       />
-
-      {/* Power meter + button */}
-      <div style={{ width: '100%', maxWidth: W, padding: '16px 20px 28px', boxSizing: 'border-box' }}>
-
-        {/* Zone labels */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontFamily: 'monospace', fontSize: 9, color: '#ff006e', letterSpacing: '0.1em' }}>WEAK</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9, color: '#00ff88', letterSpacing: '0.1em' }}>
-            {inSweet && charging ? '● PERFECT' : 'SWEET ZONE'}
-          </span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9, color: '#ff006e', letterSpacing: '0.1em' }}>OVER</span>
-        </div>
-
-        {/* Power bar track */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          height: 14,
-          borderRadius: 7,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          marginBottom: 14,
-          overflow: 'hidden',
-        }}>
-          {/* Sweet zone background highlight */}
-          <div style={{
-            position: 'absolute',
-            left: `${cfg.sweetMin}%`,
-            width: `${cfg.sweetMax - cfg.sweetMin}%`,
-            top: 0, bottom: 0,
-            background: 'rgba(0,255,136,0.12)',
-          }} />
-
-          {/* Fill */}
-          <div style={{
-            position: 'absolute',
-            left: 0, top: 0, bottom: 0,
-            width: `${pct}%`,
-            borderRadius: 7,
-            background: barColor,
-            boxShadow: charging ? `0 0 10px ${barColor}` : 'none',
-            transition: charging ? 'none' : 'background 0.2s, width 0.05s',
-          }} />
-
-          {/* Sweet zone borders (tick marks) */}
-          {[cfg.sweetMin, cfg.sweetMax].map(p => (
-            <div key={p} style={{
-              position: 'absolute',
-              left: `${p}%`,
-              top: 0, bottom: 0,
-              width: 2,
-              background: 'rgba(0,255,136,0.6)',
-              transform: 'translateX(-50%)',
-            }} />
-          ))}
-        </div>
-
-        {/* Shoot button */}
-        <button
-          onPointerDown={handleDown}
-          onPointerUp={handleUp}
-          onPointerLeave={handleUp}
-          style={{
-            width: '100%',
-            height: 60,
-            borderRadius: 16,
-            background: charging
-              ? (inSweet ? 'rgba(0,255,136,0.15)' : 'rgba(255,140,0,0.12)')
-              : 'rgba(255,140,0,0.08)',
-            border: charging
-              ? `2px solid ${inSweet ? '#00ff88' : '#ff8c00'}`
-              : '2px solid rgba(255,140,0,0.45)',
-            color: charging ? (inSweet ? '#00ff88' : '#ff8c00') : '#ff8c00',
-            fontFamily: 'monospace',
-            fontSize: 16,
-            fontWeight: 'bold',
-            letterSpacing: '0.15em',
-            cursor: 'pointer',
-            touchAction: 'none',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            boxShadow: charging && inSweet ? '0 0 24px rgba(0,255,136,0.25)' : 'none',
-            transition: 'background 0.1s, border-color 0.1s, color 0.1s, box-shadow 0.1s',
-          }}
-        >
-          {charging ? (inSweet ? '● RELEASE!' : 'HOLD...') : 'HOLD TO SHOOT'}
-        </button>
-
-        <p style={{
-          fontFamily: 'monospace', fontSize: 9, color: 'rgba(255,255,255,0.2)',
-          textAlign: 'center', letterSpacing: '0.12em', marginTop: 10,
-        }}>
-          TIME YOUR RELEASE + THE HOOP
-        </p>
-      </div>
+      <p style={{
+        fontFamily: 'monospace', fontSize: 9, color: 'rgba(255,255,255,0.18)',
+        letterSpacing: '0.12em', padding: '10px 0 20px',
+      }}>
+        SWIPE UP · AIM FOR THE MOVING HOOP
+      </p>
     </div>
   )
 }

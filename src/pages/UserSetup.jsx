@@ -200,6 +200,7 @@ export default function UserSetup() {
           <div className="flex gap-2 overflow-x-auto pb-1 mb-3 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
             {[
               { id: 'pong',       label: 'PONG VS AI',   color: '#00f5ff' },
+              { id: 'soccer',     label: 'PENALTIES',    color: '#00ff88' },
               { id: 'hoops',      label: 'HOOP SHOTS',   color: '#ff8c00' },
               { id: 'shooter',    label: 'SHOOTER',      color: '#00f5ff' },
               { id: 'runner',     label: 'RUNNER',       color: '#00ff88' },

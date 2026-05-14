@@ -1,5 +1,6 @@
 import PongGame       from './pong/PongGame'
 import HoopsGame      from './hoops/HoopsGame'
+import SoccerGame     from './soccer/SoccerGame'
 import ArcheryGame    from './archery/ArcheryGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
 import CrosswordGame  from './crossword/CrosswordGame'
@@ -19,6 +20,15 @@ export const GAME_REGISTRY = {
     gradient: 'linear-gradient(135deg, rgba(0,245,255,0.18), rgba(0,80,200,0.15))',
     border: 'rgba(0,245,255,0.45)',
     glow: 'rgba(0,245,255,0.18)',
+  },
+  soccer: {
+    id: 'soccer', component: SoccerGame,
+    label: 'PENALTY SHOOTOUT', desc: 'Swipe to place your shot — beat the keeper, score as many as you can',
+    tag: 'SPORT',
+    color: '#00ff88',
+    gradient: 'linear-gradient(135deg, rgba(0,255,136,0.18), rgba(0,160,80,0.12))',
+    border: 'rgba(0,255,136,0.45)',
+    glow: 'rgba(0,255,136,0.18)',
   },
   hoops: {
     id: 'hoops', component: HoopsGame,
