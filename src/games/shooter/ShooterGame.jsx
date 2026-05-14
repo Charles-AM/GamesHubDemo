@@ -137,6 +137,8 @@ export default function ShooterGame({ difficulty = 'medium', onFinish }) {
     spawnRate:  120,   // frames between spawns (decreases over time)
     waveTimer:  0,
     elapsed:    0,
+    escapeFlashes: [], // {x, life} — "ESCAPED!" warning at bottom
+    lifeFlash:  0,     // red overlay countdown when life lost
   }), [])
 
   useEffect(() => {
@@ -279,6 +281,8 @@ export default function ShooterGame({ difficulty = 'medium', onFinish }) {
         if (e.y > CANVAS_H + e.h) {
           livesRef.current = Math.max(0, livesRef.current - 1)
           setLives(livesRef.current)
+          s.lifeFlash = 20
+          s.escapeFlashes.push({ x: e.x + e.w / 2, life: 50 })
           if (livesRef.current <= 0) { endGame(); return false }
           return false
         }
@@ -342,6 +346,30 @@ export default function ShooterGame({ difficulty = 'medium', onFinish }) {
       // Particles
       s.particles.forEach(p => drawParticle(ctx, p))
 
+      // Escape flashes — "ESCAPED! -1 🚀" at bottom of screen
+      s.escapeFlashes = s.escapeFlashes
+        .map(f => ({ ...f, life: f.life - dt }))
+        .filter(f => f.life > 0)
+      s.escapeFlashes.forEach(f => {
+        const a = Math.min(1, f.life / 25)
+        ctx.save()
+        ctx.globalAlpha = a
+        ctx.fillStyle   = '#ff006e'
+        ctx.shadowColor = '#ff006e'; ctx.shadowBlur = 12
+        ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'
+        ctx.fillText('ESCAPED! -1 🚀', Math.max(80, Math.min(CANVAS_W - 80, f.x)), CANVAS_H - 16)
+        ctx.restore()
+      })
+      if (s.lifeFlash > 0) { s.lifeFlash -= dt }
+
+      // Life-lost red screen flash
+      if (s.lifeFlash > 0) {
+        ctx.save()
+        ctx.fillStyle = `rgba(255,0,60,${(s.lifeFlash / 20) * 0.3})`
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
+        ctx.restore()
+      }
+
       rafRef.current = requestAnimationFrame(loop)
     }
 
@@ -379,14 +407,16 @@ export default function ShooterGame({ difficulty = 'medium', onFinish }) {
   }, [])
 
   if (phase === 'result') {
+    const survived = livesRef.current > 0
     return (
       <ResultScreen
         game="SPACE SHOOTER"
         score={scoreRef.current}
-        color="cyan"
+        color={survived ? 'cyan' : 'pink'}
+        outcome={survived ? 'win' : 'lose'}
         stats={[
-          { label: 'SURVIVED', value: `${GAME_DURATION - timeRef.current}s` },
-          { label: 'LIVES',    value: `${livesRef.current}/${cfg.lives}` },
+          { label: survived ? 'SURVIVED' : 'LASTED',  value: `${GAME_DURATION - timeRef.current}s` },
+          { label: 'LIVES LEFT', value: `${livesRef.current}/${cfg.lives}` },
         ]}
         onPlayAgain={() => window.location.reload()}
         onHub={() => navigate('/hub')}

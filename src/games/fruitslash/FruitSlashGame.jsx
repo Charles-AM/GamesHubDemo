@@ -67,6 +67,8 @@ export default function FruitSlashGame({ difficulty = 'medium', onFinish }) {
       slices:    [],     // trail points
       particles: [],
       scorePopups: [],
+      missPopups: [],    // "MISS! -1" floating text
+      lifeFlash: 0,      // red overlay countdown
       spawnTimer: 0,
       alive: true,
     }
@@ -264,6 +266,8 @@ export default function FruitSlashGame({ difficulty = 'medium', onFinish }) {
           if (!f.isBomb) {
             livesRef.current = Math.max(0, livesRef.current - 1)
             setLives(livesRef.current)
+            s.lifeFlash = 18
+            s.missPopups.push({ x: f.x, y: H - 60, text: 'MISS! -1 ❤️', life: 55 })
             if (livesRef.current <= 0) { endGame() }
           }
           return false
@@ -337,6 +341,27 @@ export default function FruitSlashGame({ difficulty = 'medium', onFinish }) {
         ctx.restore()
         return sp.life > 0
       })
+
+      // ── Miss popups ───────────────────────────────
+      s.missPopups = (s.missPopups || []).filter(mp => {
+        mp.y -= 1; mp.life--
+        ctx.save()
+        ctx.globalAlpha = Math.min(1, mp.life / 25)
+        ctx.fillStyle   = '#ff4466'
+        ctx.shadowColor = '#ff4466'; ctx.shadowBlur = 10
+        ctx.font        = 'bold 15px monospace'
+        ctx.textAlign   = 'center'
+        ctx.fillText(mp.text, Math.max(60, Math.min(W - 60, mp.x)), mp.y)
+        ctx.restore()
+        return mp.life > 0
+      })
+
+      // ── Life-lost red flash ────────────────────────
+      if (s.lifeFlash > 0) {
+        s.lifeFlash--
+        ctx.fillStyle = `rgba(255,0,60,${(s.lifeFlash / 18) * 0.3})`
+        ctx.fillRect(0, 0, W, H)
+      }
 
       rafRef.current = requestAnimationFrame(loop)
     }

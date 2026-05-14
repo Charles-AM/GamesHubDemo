@@ -296,7 +296,23 @@ export default function RunnerGame({ difficulty = 'medium', onFinish }) {
                     py < ob.y + ob.h - 3 &&
                     py + ph > ob.y + 3
 
-        if (hit) { endGame(); return false }
+        if (hit) {
+          // Stop loop immediately, show death flash, then end
+          cancelAnimationFrame(rafRef.current)
+          drawBg(ctx, s.bgOffset, speed)
+          s.obstacles.forEach(o => drawObstacle(ctx, o))
+          drawPlayer(ctx, p)
+          ctx.fillStyle = 'rgba(255,0,60,0.55)'
+          ctx.fillRect(0, 0, W, H)
+          ctx.fillStyle = '#ff006e'
+          ctx.shadowColor = '#ff006e'; ctx.shadowBlur = 20
+          ctx.font = 'bold 28px monospace'; ctx.textAlign = 'center'
+          const label = ob.type === 'drone' ? 'DUCK THE DRONES!' : ob.type === 'barrier' ? 'JUMP THE BARRIERS!' : 'JUMP OBSTACLES!'
+          ctx.fillText('💥 ' + label, W / 2, H / 2)
+          ctx.shadowBlur = 0
+          setTimeout(endGame, 700)
+          return false
+        }
         return true
       })
 

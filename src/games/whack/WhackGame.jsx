@@ -153,7 +153,10 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
     spawnTimer:  cfg.spawnInterval,
     timeLeft:    GAME_DURATION,
     gameOver:    false,
-    flashHits:   [], // {x,y,pts,life} floating +pts
+    flashHits:   [],   // {x,y,pts,life} floating +pts
+    missFlashes:  [],  // {x,y,text,life,color} floating penalty text
+    lifeFlash:    0,   // frames of red overlay when life is lost
+    introTimer:   180, // 3s intro hint
   }), [cfg])
 
   useEffect(() => { stRef.current = mkState() }, [mkState])
@@ -194,8 +197,10 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
     const t = MOLE_TYPES[m.type]
 
     if (m.type === 'bomb') {
-      // Tapped a bomb → lose a miss
+      // Tapped a bomb → lose a life
       st.misses = Math.min(MAX_MISS, st.misses + 1)
+      st.lifeFlash = 18
+      st.missFlashes.push({ x: h.x, y: h.y - 50, text: '💣 -1 LIFE!', color: '#ff006e', life: 60 })
       m.state = 'hit'; m.hitProgress = 0
       if (st.misses >= MAX_MISS) st.gameOver = true
     } else {
@@ -258,6 +263,10 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
             m.state = 'sinking'
             if (m.type !== 'bomb') {  // missing a bomb = no penalty
               st.misses += 1
+              st.lifeFlash = 12
+              st.combo = 0
+              const h2 = HOLES[m.holeId]
+              st.missFlashes.push({ x: h2.x, y: h2.y - 40, text: 'MISSED! -1', color: '#ff4466', life: 55 })
               if (st.misses >= MAX_MISS) st.gameOver = true
             }
           }
@@ -273,10 +282,11 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
         }
       })
 
-      /* Flash hits */
-      st.flashHits = st.flashHits
-        .map(f => ({ ...f, y: f.y - 0.8 * dt, life: f.life - dt }))
-        .filter(f => f.life > 0)
+      /* Flash hits + miss flashes */
+      st.flashHits  = st.flashHits.map(f => ({ ...f, y: f.y - 0.8 * dt, life: f.life - dt })).filter(f => f.life > 0)
+      st.missFlashes = st.missFlashes.map(f => ({ ...f, y: f.y - 0.5 * dt, life: f.life - dt })).filter(f => f.life > 0)
+      if (st.lifeFlash > 0) st.lifeFlash -= dt
+      if (st.introTimer > 0) st.introTimer -= dt
 
       /* Timer */
       st.timeLeft -= dt / 60
@@ -346,6 +356,12 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
       ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'
       ctx.fillText(`${Math.ceil(st.timeLeft)}s`, W / 2, 32)
 
+      // Life-lost red flash overlay
+      if (st.lifeFlash > 0) {
+        ctx.fillStyle = `rgba(255,0,60,${(st.lifeFlash / 18) * 0.28})`
+        ctx.fillRect(0, 0, W, H)
+      }
+
       // Floating +pts
       st.flashHits.forEach(f => {
         const a = Math.min(1, f.life / 20)
@@ -355,6 +371,29 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
         ctx.fillText(`+${f.pts}`, f.x, f.y)
         ctx.shadowBlur = 0
       })
+
+      // Miss / bomb penalty text
+      st.missFlashes.forEach(f => {
+        const a = Math.min(1, f.life / 30)
+        ctx.fillStyle   = f.color
+        ctx.shadowColor = f.color; ctx.shadowBlur = 10
+        ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center'
+        ctx.globalAlpha = a
+        ctx.fillText(f.text, f.x, f.y)
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0
+      })
+
+      // Intro hint (fades out after 3s)
+      if (st.introTimer > 0) {
+        const a = Math.min(1, st.introTimer / 40)
+        ctx.globalAlpha = a
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'
+        ctx.fillRect(W/2 - 145, H/2 - 22, 290, 44)
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'
+        ctx.fillText('HIT MOLES · AVOID 💣 BOMBS', W/2, H/2 + 5)
+        ctx.globalAlpha = 1
+      }
 
       // Game over flash overlay
       if (st.gameOver) {
