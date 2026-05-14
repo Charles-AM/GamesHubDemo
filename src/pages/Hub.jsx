@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../context/UserContext'
+import { useTheme } from '../context/ThemeContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 
 const GAME_ICONS = { mathblitz: '⚡', archery: '🏹', crossword: '✏️', wordsearch: '🔍', flags: '🌍', snake: '🐍', celeb: '🌟' }
@@ -19,6 +20,7 @@ function timeAgo(ts) {
 
 export default function Hub() {
   const { user, scores, matchHistory, signOut: logout } = useUser()
+  const { isDark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [expandGame,  setExpandGame]  = useState(null)
   const [showHowTo,   setShowHowTo]   = useState(false)
@@ -66,6 +68,18 @@ export default function Hub() {
             className="font-orbitron text-[10px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1">
             ? HOW TO PLAY
           </button>
+          {/* Theme toggle */}
+          <button onClick={toggleTheme}
+            className="flex items-center justify-center rounded-xl transition-all"
+            style={{
+              width: 34, height: 34,
+              background: 'var(--surf-2)',
+              border: '1px solid var(--bdr-2)',
+              fontSize: 15,
+            }}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {isDark ? '☀️' : '🌙'}
+          </button>
           <button onClick={logout}
             className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors px-2 py-1">
             EXIT ›
@@ -78,11 +92,12 @@ export default function Hub() {
         <div className="rounded-2xl p-4 flex items-center gap-4"
           style={{
             background: 'linear-gradient(135deg, rgba(0,245,255,0.07), rgba(191,0,255,0.07))',
-            border: '1px solid rgba(0,245,255,0.2)',
+            border: '1px solid var(--bdr-2)',
+            backdropFilter: 'blur(12px)',
           }}>
           {/* Avatar */}
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            style={{ background: 'var(--surf-2)', border: '1px solid var(--bdr-2)' }}>
             {user?.avatar || '🎮'}
           </div>
 
@@ -130,9 +145,9 @@ export default function Hub() {
           className="rounded-2xl p-4 relative overflow-hidden"
           style={{
             background: dailyDone
-              ? 'rgba(255,255,255,0.03)'
+              ? 'var(--surf-1)'
               : `linear-gradient(135deg, ${dailyGame.gradient.match(/#[^,)]+/g)?.[0] || dailyGame.color}22, rgba(255,215,0,0.12))`,
-            border: `1px solid ${dailyDone ? 'rgba(255,255,255,0.08)' : 'rgba(255,215,0,0.5)'}`,
+            border: `1px solid ${dailyDone ? 'var(--bdr-2)' : 'rgba(255,215,0,0.5)'}`,
             boxShadow: dailyDone ? 'none' : '0 0 30px rgba(255,215,0,0.1)',
             cursor: dailyDone ? 'default' : 'pointer',
           }}>
@@ -184,9 +199,9 @@ export default function Hub() {
 
       {/* ── Section title ── */}
       <div className="relative z-10 px-5 mb-4 flex items-center gap-3">
-        <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="h-px flex-1" style={{ background: 'var(--bdr-2)' }} />
         <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">CHOOSE YOUR BATTLE</p>
-        <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="h-px flex-1" style={{ background: 'var(--bdr-2)' }} />
       </div>
 
       {/* ── Game Grid (2-col for first 4, full for 5th) ── */}
@@ -210,7 +225,7 @@ export default function Hub() {
               transition={{ type: 'spring', stiffness: 260, damping: 28 }}
               onClick={e => e.stopPropagation()}
               className="w-full max-w-lg rounded-t-3xl overflow-y-auto"
-              style={{ background: 'rgba(10,10,28,0.98)', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '85vh' }}>
+              style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(24px)', border: '1px solid var(--bdr-2)', maxHeight: '85vh' }}>
 
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-1">
@@ -236,9 +251,9 @@ export default function Hub() {
                   { icon: '🌍', name: 'FLAG FRENZY', desc: 'Identify the country from its flag. 10 rounds, 4 choices each. Fast correct answers give bonus points.' },
                 ].map(g => (
                   <div key={g.name} className="flex gap-3 mb-4 pb-4"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    style={{ borderBottom: '1px solid var(--bdr-1)' }}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      style={{ background: 'var(--surf-2)', border: '1px solid var(--bdr-2)' }}>
                       {g.icon}
                     </div>
                     <div>
@@ -289,9 +304,9 @@ export default function Hub() {
       {recent.length > 0 && (
         <div className="relative z-10 px-4 mt-5">
           <div className="flex items-center gap-3 mb-3">
-            <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            <div className="h-px flex-1" style={{ background: 'var(--bdr-2)' }} />
             <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">RECENT ACTIVITY</p>
-            <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            <div className="h-px flex-1" style={{ background: 'var(--bdr-2)' }} />
           </div>
           <div className="flex flex-col gap-2">
             {recent.map((m, i) => <ActivityRow key={m.id} match={m} i={i} />)}
@@ -394,7 +409,7 @@ function ActivityRow({ match, i }) {
     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
       transition={{ delay: i * 0.05 }}
       className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ background: 'var(--surf-1)', border: '1px solid var(--bdr-1)' }}>
       <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}` }} />
       <span className="text-sm">{icon}</span>
       <div className="flex-1 min-w-0">

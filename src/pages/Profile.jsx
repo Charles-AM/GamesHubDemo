@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser, getLevel, getLevelPct, getXpToNext, XP_PER_LEVEL } from '../context/UserContext'
+import { useTheme } from '../context/ThemeContext'
 import { GAME_LIST } from '../games/gameRegistry'
 
 function timeAgo(ts) {
@@ -20,6 +21,7 @@ const GAME_NAME  = { mathblitz: 'MATH BLITZ', archery: 'ARCHERY', crossword: 'CR
 
 export default function Profile() {
   const { user, scores, matchHistory, deleteAccount, signOut } = useUser()
+  const { isDark, toggle: toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteInput,     setDeleteInput]     = useState('')
@@ -61,6 +63,16 @@ export default function Profile() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 relative z-10">
         <p className="font-orbitron text-xs text-gray-500 tracking-widest">PROFILE</p>
+        <button onClick={toggleTheme}
+          className="flex items-center justify-center rounded-xl transition-all"
+          style={{
+            width: 34, height: 34,
+            background: 'var(--surf-2)',
+            border: '1px solid var(--bdr-2)',
+            fontSize: 15,
+          }}>
+          {isDark ? '☀️' : '🌙'}
+        </button>
       </div>
 
       {/* Hero card */}
@@ -68,12 +80,13 @@ export default function Profile() {
         className="relative z-10 rounded-3xl p-6 text-center mb-5"
         style={{
           background: 'linear-gradient(135deg, rgba(0,245,255,0.08), rgba(191,0,255,0.08))',
-          border: '1px solid rgba(0,245,255,0.2)',
+          border: '1px solid var(--bdr-2)',
+          backdropFilter: 'blur(12px)',
         }}>
 
         {/* Avatar */}
         <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-5xl mx-auto mb-3"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(0,245,255,0.3)' }}>
+          style={{ background: 'var(--surf-2)', border: '2px solid rgba(0,245,255,0.3)' }}>
           {user.avatar}
         </div>
 
@@ -107,7 +120,7 @@ export default function Profile() {
 
         {/* Quick stats */}
         <div className="grid grid-cols-4 gap-2 mt-4 pt-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ borderTop: '1px solid var(--bdr-1)' }}>
           {[
             { label: 'PLAYED',   value: totalPlays, color: '#00f5ff' },
             { label: 'WINS',     value: totalWins,  color: '#00ff88' },
@@ -163,7 +176,7 @@ export default function Profile() {
       <div className="relative z-10 mb-4">
         <button onClick={signOut}
           className="w-full py-3 rounded-xl font-orbitron text-xs tracking-widest transition-all"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#666' }}>
+          style={{ background: 'var(--surf-1)', border: '1px solid var(--bdr-1)', color: 'var(--txt-3)' }}>
           SIGN OUT
         </button>
       </div>
@@ -185,7 +198,7 @@ export default function Profile() {
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  style={{ background: 'var(--surf-1)', border: '1px solid var(--bdr-1)' }}>
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotCol, boxShadow: `0 0 5px ${dotCol}` }} />
                   <span className="text-base">{gIcon}</span>
                   <div className="flex-1 min-w-0">
@@ -252,7 +265,7 @@ function DeleteModal({ input, setInput, error, loading, onConfirm, onClose }) {
       <motion.div initial={{ scale: 0.85, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={e => e.stopPropagation()}
         className="w-full max-w-sm rounded-3xl p-6"
-        style={{ background: 'rgba(12,12,30,0.98)', border: '1px solid rgba(255,0,110,0.4)' }}>
+        style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,0,110,0.4)' }}>
 
         <div className="text-3xl text-center mb-3">⚠️</div>
         <h3 className="font-orbitron text-base font-black text-center neon-text-pink mb-2">
@@ -296,9 +309,9 @@ function DeleteModal({ input, setInput, error, loading, onConfirm, onClose }) {
 function SectionTitle({ text }) {
   return (
     <div className="flex items-center gap-3 mb-3">
-      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="h-px flex-1" style={{ background: 'var(--bdr-2)' }} />
       <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">{text}</p>
-      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="h-px flex-1" style={{ background: 'var(--bdr-2)' }} />
     </div>
   )
 }

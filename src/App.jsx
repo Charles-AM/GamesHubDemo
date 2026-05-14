@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { UserProvider, useUser } from './context/UserContext'
+import { ThemeProvider } from './context/ThemeContext'
 import UserSetup    from './pages/UserSetup'
 import Hub          from './pages/Hub'
 import Profile      from './pages/Profile'
@@ -55,16 +56,17 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <UserProvider>
-      <BrowserRouter>
-        <div className="scanlines grid-bg min-h-screen">
-          {/* Constrain to mobile width on desktop, centred */}
-          <div className="relative mx-auto min-h-screen" style={{ maxWidth: 480 }}>
-            <LevelUpToast />
-            <Layout />
+    <ThemeProvider>
+      <UserProvider>
+        <BrowserRouter>
+          <div className="scanlines grid-bg min-h-screen">
+            <div className="relative mx-auto min-h-screen" style={{ maxWidth: 480 }}>
+              <LevelUpToast />
+              <Layout />
+            </div>
           </div>
-        </div>
-      </BrowserRouter>
-    </UserProvider>
+        </BrowserRouter>
+      </UserProvider>
+    </ThemeProvider>
   )
 }

@@ -15,9 +15,10 @@ export default function BottomNav() {
       style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480 }}>
       <div className="flex items-stretch"
         style={{
-          background: 'rgba(8,8,24,0.95)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--nav-bg)',
+          borderTop: '1px solid var(--nav-border)',
           backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}>
         {TABS.map(tab => {
@@ -30,7 +31,7 @@ export default function BottomNav() {
                 {tab.icon}
               </span>
               <span className="font-orbitron text-[9px] tracking-widest"
-                style={{ color: active ? '#00f5ff' : '#444' }}>
+                style={{ color: active ? '#00f5ff' : 'var(--txt-3)' }}>
                 {tab.label}
               </span>
               {active && (
