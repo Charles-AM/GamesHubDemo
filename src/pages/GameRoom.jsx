@@ -86,7 +86,7 @@ export default function GameRoom() {
     const { roomId, asHost } = JSON.parse(saved)
     supabase.from('rooms').select('*').eq('id', roomId).maybeSingle()
       .then(({ data }) => {
-        if (!data || data.status === 'finished') {
+        if (!data || data.status === 'finished' || data.status === 'abandoned') {
           sessionStorage.removeItem('arcadia_room')
           return
         }
@@ -100,6 +100,14 @@ export default function GameRoom() {
   /* ── React to room state from Realtime ── */
   useEffect(() => {
     if (!room) return
+
+    // Someone quit mid-game — everyone goes home
+    if (room.status === 'abandoned') {
+      sessionStorage.removeItem('arcadia_room')
+      channelRef.current?.unsubscribe()
+      navigate('/hub')
+      return
+    }
 
     if (room.status === 'lobby' && (screenRef.current === 'results' || screenRef.current === 'waiting')) {
       roundSavedRef.current = false
@@ -207,7 +215,12 @@ export default function GameRoom() {
     finally { setLoading(false) }
   }
 
+  const readyUp = async () => {
+    await supabase.from('rooms').update({ status: 'guest_ready' }).eq('id', room.id)
+  }
+
   const startGame = async () => {
+    if (room.status !== 'guest_ready') return  // guard: guest must be ready first
     const { error: err } = await supabase.from('rooms').update({ status: 'playing' }).eq('id', room.id)
     if (err) setError('Failed to start')
   }
@@ -250,10 +263,8 @@ export default function GameRoom() {
 
   const forfeit = async () => {
     if (!room) { goHome(); return }
-    const update = isHost
-      ? { host_score: -1,  status: 'finished' }
-      : { guest_score: -1, status: 'finished' }
-    await supabase.from('rooms').update(update).eq('id', room.id)
+    // 'abandoned' tells ALL clients to go home — not just the forfeiter
+    await supabase.from('rooms').update({ status: 'abandoned' }).eq('id', room.id)
     sessionStorage.removeItem('arcadia_room')
     channelRef.current?.unsubscribe()
     navigate('/hub')
@@ -529,26 +540,54 @@ export default function GameRoom() {
             </div>
 
             {isHost ? (
-              room.guest_id ? (
-                <motion.button whileTap={{ scale: 0.96 }} onClick={startGame}
-                  className="w-full py-4 rounded-2xl font-orbitron text-sm font-black tracking-widest mb-3 flex items-center justify-center gap-2"
-                  style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid #00ff88', color: '#00ff88', boxShadow: '0 0 30px rgba(0,255,136,0.15)' }}>
-                  <Icon name="plus" size={16} color="#00ff88" strokeWidth={2.5} />
-                  START GAME
-                </motion.button>
-              ) : (
+              !room.guest_id ? (
+                /* No guest yet */
                 <div className="text-center py-4">
                   <PulsingDots color="#00f5ff" />
                   <p className="font-rajdhani text-sm text-gray-500 mt-2 mb-4">Waiting for opponent to join...</p>
                 </div>
+              ) : room.status === 'guest_ready' ? (
+                /* Guest is ready — host can start */
+                <motion.button whileTap={{ scale: 0.96 }} onClick={startGame}
+                  className="w-full py-4 rounded-2xl font-orbitron text-sm font-black tracking-widest mb-3 flex items-center justify-center gap-2"
+                  style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid #00ff88', color: '#00ff88', boxShadow: '0 0 40px rgba(0,255,136,0.2)' }}>
+                  <Icon name="plus" size={16} color="#00ff88" strokeWidth={2.5} />
+                  START GAME
+                </motion.button>
+              ) : (
+                /* Guest joined but hasn't readied up yet */
+                <div className="text-center py-5 rounded-2xl mb-3"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <PulsingDots color="#bf00ff" />
+                  <p className="font-rajdhani text-sm text-gray-500 mt-2">Waiting for opponent to ready up...</p>
+                </div>
               )
             ) : (
-              <div className="text-center py-4">
-                <PulsingDots color="#bf00ff" />
-                <p className="font-rajdhani text-sm text-gray-500 mt-2 mb-4">
-                  {room.guest_id ? 'Waiting for host to start...' : 'Joining room...'}
-                </p>
-              </div>
+              !room.guest_id ? (
+                /* Still joining */
+                <div className="text-center py-4">
+                  <PulsingDots color="#bf00ff" />
+                  <p className="font-rajdhani text-sm text-gray-500 mt-2 mb-4">Joining room...</p>
+                </div>
+              ) : room.status === 'guest_ready' ? (
+                /* Already readied — waiting for host */
+                <div className="text-center py-5 rounded-2xl mb-3"
+                  style={{ background: 'rgba(0,255,136,0.05)', border: '1px solid rgba(0,255,136,0.25)' }}>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full" style={{ background: '#00ff88', boxShadow: '0 0 8px #00ff88' }} />
+                    <p className="font-orbitron text-xs font-black" style={{ color: '#00ff88' }}>READY</p>
+                  </div>
+                  <p className="font-rajdhani text-sm text-gray-500">Waiting for host to start...</p>
+                </div>
+              ) : (
+                /* Guest needs to ready up */
+                <motion.button whileTap={{ scale: 0.96 }} onClick={readyUp}
+                  className="w-full py-4 rounded-2xl font-orbitron text-sm font-black tracking-widest mb-3 flex items-center justify-center gap-2"
+                  style={{ background: 'rgba(191,0,255,0.1)', border: '1px solid #bf00ff', color: '#bf00ff', boxShadow: '0 0 40px rgba(191,0,255,0.15)' }}>
+                  <Icon name="check" size={16} color="#bf00ff" strokeWidth={2.5} />
+                  READY UP
+                </motion.button>
+              )
             )}
 
             <button onClick={goHome}
