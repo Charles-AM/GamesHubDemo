@@ -114,7 +114,7 @@ export default function WhackGame({ difficulty = 'medium', onFinish }) {
     timeLeft:   GAME_DURATION,
     popups:     [],   // { x, y, text, color, life }
     missFlash:  0,    // red overlay countdown
-    introTimer: 150,  // 2.5s intro hint
+    introTimer: 0,
   }), [cfg])
 
   useEffect(() => {
