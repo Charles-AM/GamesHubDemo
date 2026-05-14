@@ -1,5 +1,5 @@
 import MathBlitzGame  from './mathblitz/MathBlitzGame'
-import WordleGame     from './wordle/WordleGame'
+import ArcheryGame    from './archery/ArcheryGame'
 import WordSearchGame from './wordsearch/WordSearchGame'
 import CrosswordGame  from './crossword/CrosswordGame'
 import FlagGame       from './flags/FlagGame'
@@ -15,14 +15,14 @@ export const GAME_REGISTRY = {
     border: 'rgba(0,245,255,0.45)',
     glow: 'rgba(0,245,255,0.18)',
   },
-  wordle: {
-    id: 'wordle', component: WordleGame,
-    label: 'WORDLE DUEL', desc: 'Guess the 5-letter word in fewest tries',
-    icon: '🔤', tag: 'WORD',
-    color: '#00ff88',
-    gradient: 'linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,180,80,0.15))',
-    border: 'rgba(0,255,136,0.45)',
-    glow: 'rgba(0,255,136,0.18)',
+  archery: {
+    id: 'archery', component: ArcheryGame,
+    label: 'ARCHERY', desc: '10 shots, moving crosshair — beat the wind and hit bullseye',
+    icon: '🏹', tag: 'AIM',
+    color: '#ffd700',
+    gradient: 'linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.15))',
+    border: 'rgba(255,215,0,0.45)',
+    glow: 'rgba(255,215,0,0.18)',
   },
   crossword: {
     id: 'crossword', component: CrosswordGame,

@@ -7,7 +7,7 @@ const ADMIN_EMAIL = 'vmb4manager@gmail.com'
 
 const GAME_LABEL = {
   mathblitz:  '⚡ Math Blitz',
-  wordle:     '🔤 Wordle',
+  archery:    '🏹 Archery',
   crossword:  '✏️ Crossword',
   wordsearch: '🔍 Word Search',
   flags:      '🌍 Flags',

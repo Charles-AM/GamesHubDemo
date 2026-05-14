@@ -20,7 +20,7 @@ export const AVATARS = [
 ]
 
 // ── Daily challenge ────────────────────────────────────────
-const DAILY_ROTATION = ['mathblitz', 'wordle', 'snake', 'crossword', 'flags', 'wordsearch', 'snake']
+const DAILY_ROTATION = ['mathblitz', 'archery', 'snake', 'crossword', 'flags', 'wordsearch', 'archery']
 export const getDailyGame = () => DAILY_ROTATION[new Date().getDay()]
 export const todayKey = () => {
   const d = new Date()
