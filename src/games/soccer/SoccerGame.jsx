@@ -8,219 +8,203 @@ const W = 390
 const H = 580
 
 /* Goal geometry */
-const GOAL_LEFT  = 70
-const GOAL_RIGHT = 320
-const GOAL_TOP   = 60
+const GOAL_LEFT  = 72
+const GOAL_RIGHT = 318
+const GOAL_TOP   = 58
 const GOAL_BOT   = 148
-const GOAL_MID_Y = (GOAL_TOP + GOAL_BOT) / 2   // ~104
+const GOAL_MID_Y = (GOAL_TOP + GOAL_BOT) / 2   // ~103
+const GOAL_W     = GOAL_RIGHT - GOAL_LEFT        // 246
 
-/* Ball */
-const BALL_START_X = W / 2
-const BALL_START_Y = 455
-const BALL_R       = 16
+/* Ball start (penalty spot) */
+const BALL_X = W / 2
+const BALL_Y = 462
+const BALL_R = 16
 
 /* GK */
-const GK_Y      = GOAL_TOP + 14
-const GK_W      = 58
-const GK_H      = 52
-const GK_MIN_X  = GOAL_LEFT  + GK_W / 2 + 6
-const GK_MAX_X  = GOAL_RIGHT - GK_W / 2 - 6
+const GK_Y     = GOAL_TOP + 14
+const GK_W     = 56
+const GK_H     = 52
+const GK_MIN_X = GOAL_LEFT  + GK_W / 2 + 4   // 108
+const GK_MAX_X = GOAL_RIGHT - GK_W / 2 - 4   // 282
+const GK_RANGE = GK_MAX_X - GK_MIN_X           // 174
 
-const GAME_DURATION = 60
+/* Drag mechanic */
+const MAX_DRAG_BACK = 110  // full power requires pulling back 110px
+const MIN_DRAG_BACK = 22   // must pull at least 22px to shoot
+const MAX_AIM_DRAG  = 88   // full side-aim requires 88px horizontal drag
+const AIM_SPREAD    = 112  // px offset from goal center at max aim
 
+/* Game format */
+const SHOTS_TOTAL = 10
+
+/* ─── Difficulty ──────────────────────────────────────────────────────── */
 const DIFF = {
-  easy:   { gkSpeed: 2.2, gkReact: 28, gkOscSpeed: 1.0, label: 'ROOKIE'     },
-  medium: { gkSpeed: 4.5, gkReact: 18, gkOscSpeed: 1.7, label: 'CHALLENGER' },
-  hard:   { gkSpeed: 7.0, gkReact: 10, gkOscSpeed: 2.5, label: 'VETERAN'    },
+  easy:   { gkSpd: 3.0,  readBias: 0.12, patternBias: 0.00, label: 'ROOKIE'     },
+  medium: { gkSpd: 6.2,  readBias: 0.38, patternBias: 0.18, label: 'CHALLENGER' },
+  hard:   { gkSpd: 10.0, readBias: 0.55, patternBias: 0.32, label: 'VETERAN'    },
 }
 
 /* ─── Draw helpers ───────────────────────────────────────────────────── */
-
 function drawPitch(ctx) {
-  // Grass gradient background
   const grad = ctx.createLinearGradient(0, 0, 0, H)
-  grad.addColorStop(0, '#0a2e0a')
-  grad.addColorStop(1, '#0d3d0d')
+  grad.addColorStop(0, '#071807')
+  grad.addColorStop(1, '#092809')
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, W, H)
 
   // Pitch stripes
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = i % 2 === 0 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.02)'
-    ctx.fillRect(i * (W / 6), 0, W / 6, H)
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.022)'
+    ctx.fillRect(i * (W / 7), 0, W / 7, H)
   }
 
-  // Centre circle
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5
-  ctx.beginPath(); ctx.arc(W / 2, H - 50, 70, Math.PI, 0); ctx.stroke()
-
-  // Penalty spot circle
-  ctx.beginPath(); ctx.arc(BALL_START_X, BALL_START_Y, 3, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill()
-
-  // Penalty area box
-  ctx.strokeRect(40, GOAL_BOT, W - 80, 180)
-
-  // Goal area inner box
-  ctx.strokeRect(115, GOAL_BOT, 160, 80)
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1.5
+  // Penalty area
+  ctx.strokeRect(36, GOAL_BOT, W - 72, 170)
+  // Goal area
+  ctx.strokeRect(118, GOAL_BOT, 154, 66)
+  // Penalty spot
+  ctx.beginPath(); ctx.arc(BALL_X, BALL_Y, 3.5, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fill()
 }
 
 function drawGoal(ctx) {
-  const netColor = 'rgba(255,255,255,0.18)'
-
-  // Net back lines (horizontal)
-  for (let y = GOAL_TOP + 10; y < GOAL_BOT; y += 18) {
+  // Net lines horizontal
+  for (let y = GOAL_TOP + 10; y < GOAL_BOT; y += 15) {
     ctx.beginPath(); ctx.moveTo(GOAL_LEFT + 4, y); ctx.lineTo(GOAL_RIGHT - 4, y)
-    ctx.strokeStyle = netColor; ctx.lineWidth = 1; ctx.stroke()
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1; ctx.stroke()
   }
-  // Net back lines (vertical)
-  for (let x = GOAL_LEFT + 20; x < GOAL_RIGHT; x += 28) {
+  // Net lines vertical
+  for (let x = GOAL_LEFT + 18; x < GOAL_RIGHT; x += 24) {
     ctx.beginPath(); ctx.moveTo(x, GOAL_TOP + 4); ctx.lineTo(x, GOAL_BOT - 2)
-    ctx.strokeStyle = netColor; ctx.lineWidth = 1; ctx.stroke()
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1; ctx.stroke()
   }
-
-  // Posts & crossbar (glowing white)
-  ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 8
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.lineCap = 'round'
-  // Left post
+  // Posts
+  ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 10
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5.5; ctx.lineCap = 'round'
   ctx.beginPath(); ctx.moveTo(GOAL_LEFT, GOAL_BOT); ctx.lineTo(GOAL_LEFT, GOAL_TOP); ctx.stroke()
-  // Right post
   ctx.beginPath(); ctx.moveTo(GOAL_RIGHT, GOAL_BOT); ctx.lineTo(GOAL_RIGHT, GOAL_TOP); ctx.stroke()
-  // Crossbar
   ctx.beginPath(); ctx.moveTo(GOAL_LEFT, GOAL_TOP); ctx.lineTo(GOAL_RIGHT, GOAL_TOP); ctx.stroke()
   ctx.shadowBlur = 0; ctx.lineCap = 'butt'
 }
 
-function drawGK(ctx, cx, diving, diveDir) {
+function drawGK(ctx, cx, committed, leanDir) {
   const x = cx - GK_W / 2
   const y = GK_Y
-
   ctx.save()
-  if (diving) {
+
+  if (committed && Math.abs(leanDir) > 0.05) {
     ctx.translate(cx, GK_Y + GK_H / 2)
-    ctx.rotate(diveDir * Math.PI / 3)
+    ctx.rotate(leanDir * 0.5)
     ctx.translate(-cx, -(GK_Y + GK_H / 2))
   }
 
-  // Body
-  ctx.fillStyle   = '#ff006e'
-  ctx.shadowColor = '#ff006e'; ctx.shadowBlur = 10
+  // GK body
+  ctx.shadowColor = '#ff006e'; ctx.shadowBlur = 12
+  ctx.fillStyle = '#e0005e'
   ctx.fillRect(x + 8, y + 16, GK_W - 16, GK_H - 16)
-
-  // Arms (extended)
-  ctx.fillRect(x, y + 18, 10, GK_H - 28)
-  ctx.fillRect(x + GK_W - 10, y + 18, 10, GK_H - 28)
-
+  // Arms extended
+  ctx.fillRect(x - 4, y + 18, 14, GK_H - 28)
+  ctx.fillRect(x + GK_W - 10, y + 18, 14, GK_H - 28)
+  ctx.shadowBlur = 0
   // Head
-  ctx.beginPath(); ctx.arc(cx, y + 10, 14, 0, Math.PI * 2)
-  ctx.fillStyle = '#ffcba4'; ctx.shadowBlur = 0; ctx.fill()
-
+  ctx.beginPath(); ctx.arc(cx, y + 10, 15, 0, Math.PI * 2)
+  ctx.fillStyle = '#ffcba4'; ctx.fill()
+  // Eyes
+  ctx.fillStyle = '#333'
+  ctx.beginPath(); ctx.arc(cx - 5, y + 8, 2.5, 0, Math.PI * 2); ctx.fill()
+  ctx.beginPath(); ctx.arc(cx + 5, y + 8, 2.5, 0, Math.PI * 2); ctx.fill()
   ctx.restore()
 }
 
 function drawBall(ctx, x, y, spin) {
-  // Scale for perspective (larger near bottom, smaller near goal)
-  const scale = 0.5 + 0.5 * ((y - GOAL_BOT) / (BALL_START_Y - GOAL_BOT))
-  const r = Math.max(6, BALL_R * scale)
+  // Perspective scale: larger near bottom, smaller at goal
+  const t     = Math.max(0, Math.min(1, (y - GOAL_BOT) / (BALL_Y - GOAL_BOT)))
+  const scale = 0.42 + 0.58 * t
+  const r     = Math.max(4, BALL_R * scale)
 
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate(spin)
 
+  // Shadow
+  ctx.beginPath(); ctx.ellipse(0, r * 0.9, r * 0.8, r * 0.22, 0, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill()
+
   // Ball
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2)
-  ctx.fillStyle = '#f0f0f0'
-  ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 8
+  ctx.fillStyle = '#f2f2f2'
+  ctx.shadowColor = '#fff'; ctx.shadowBlur = 10
   ctx.fill(); ctx.shadowBlur = 0
 
   // Pentagon patches
-  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.2
-  ctx.beginPath()
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2 - Math.PI / 2
-    i === 0 ? ctx.moveTo(Math.cos(a)*r*0.55, Math.sin(a)*r*0.55)
-            : ctx.lineTo(Math.cos(a)*r*0.55, Math.sin(a)*r*0.55)
+  ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1.2
+  for (let ring = 0; ring < 2; ring++) {
+    const rr = r * (ring === 0 ? 0.48 : 0.82)
+    const sides = ring === 0 ? 5 : 5
+    ctx.beginPath()
+    for (let i = 0; i < sides; i++) {
+      const a = (i / sides) * Math.PI * 2 + (ring === 0 ? -Math.PI / 2 : 0)
+      i === 0 ? ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr)
+              : ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr)
+    }
+    ctx.closePath()
+    if (ring === 0) ctx.fill()
+    ctx.stroke()
   }
-  ctx.closePath(); ctx.stroke()
-
-  ctx.restore()
-}
-
-function drawArrow(ctx, sx, sy, ex, ey) {
-  // Clamp end point for clean look
-  const dx = ex - sx; const dy = ey - sy
-  const len = Math.hypot(dx, dy)
-  if (len < 20) return
-  const norm = Math.min(len, 160) / len
-  const tx = sx + dx * norm; const ty = sy + dy * norm
-
-  ctx.save()
-  ctx.globalAlpha = 0.55
-  ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 3; ctx.lineCap = 'round'
-  ctx.setLineDash([8, 6])
-  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tx, ty); ctx.stroke()
-  ctx.setLineDash([])
-
-  // Arrow head
-  const angle = Math.atan2(ty - sy, tx - sx)
-  ctx.fillStyle = '#ffd700'
-  ctx.beginPath()
-  ctx.moveTo(tx, ty)
-  ctx.lineTo(tx - 14 * Math.cos(angle - 0.4), ty - 14 * Math.sin(angle - 0.4))
-  ctx.lineTo(tx - 14 * Math.cos(angle + 0.4), ty - 14 * Math.sin(angle + 0.4))
-  ctx.closePath(); ctx.fill()
   ctx.restore()
 }
 
 /* ─── Component ──────────────────────────────────────────────────────── */
-
-export default function SoccerGame({ difficulty = 'medium' }) {
-  const navigate = useNavigate()
+export default function SoccerGame({ difficulty = 'medium', onFinish }) {
+  const navigate    = useNavigate()
   const { recordGame } = useUser()
   const cfg = DIFF[difficulty] || DIFF.medium
 
-  const canvasRef   = useRef(null)
-  const stRef       = useRef(null)
-  const rafRef      = useRef(null)
-  const lastTimeRef = useRef(null)
-
-  const dragRef = useRef({ active: false, sx: 0, sy: 0, cx: 0, cy: 0 })
+  const canvasRef    = useRef(null)
+  const stRef        = useRef(null)
+  const rafRef       = useRef(null)
+  const lastTimeRef  = useRef(null)
+  const dragRef      = useRef({ active: false, sx: 0, sy: 0, cx: 0, cy: 0 })
+  const shotHistRef  = useRef([])   // last N aim fractions for pattern reading
 
   const [phase,  setPhase]  = useState('playing')
-  const [finals, setFinals] = useState({ score: 0, goals: 0, shots: 0 })
+  const [finals, setFinals] = useState({ goals: 0 })
 
   const mkState = useCallback(() => ({
-    ball:     { x: BALL_START_X, y: BALL_START_Y, vx: 0, vy: 0, flying: false, spin: 0, scored: false },
-    gk:       { cx: W / 2, dir: 1, phase: 0, diving: false, diveDir: 0, divePower: 0 },
-    score:    0,
-    goals:    0,
-    shots:    0,
-    timeLeft: GAME_DURATION,
-    flashMsg: '',
+    ball:       { x: BALL_X, y: BALL_Y, vx: 0, vy: 0, flying: false, spin: 0, scored: false },
+    gk:         { cx: W / 2, osc: 0, committed: false, commitX: W / 2, leanDir: 0 },
+    goals:      0,
+    shotsLeft:  SHOTS_TOTAL,
+    shotResults: [],   // 'goal' | 'saved' | 'wide' per shot
+    flashMsg:   '',
     flashFrames: 0,
-    resetFrames: 0,
+    resetTimer: 0,
+    gameOver:   false,
   }), [])
 
   const resetGame = useCallback(() => {
     stRef.current   = mkState()
     lastTimeRef.current = null
     dragRef.current = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 }
+    shotHistRef.current = []
     setPhase('playing')
   }, [mkState])
 
-  useEffect(() => {
-    stRef.current = mkState()
-  }, [mkState])
+  useEffect(() => { stRef.current = mkState() }, [mkState])
 
-  /* pointer handlers */
+  /* ── Pointer / touch handlers ── */
   const onDown = useCallback((e) => {
     e.preventDefault()
     const st = stRef.current
-    if (!st || st.ball.flying) return
+    if (!st || st.ball.flying || st.shotsLeft <= 0 || st.gameOver) return
     const rect = canvasRef.current.getBoundingClientRect()
-    const sx = (e.clientX - rect.left) * (W / rect.width)
-    const sy = (e.clientY - rect.top)  * (H / rect.height)
-    dragRef.current = { active: true, sx, sy, cx: sx, cy: sy }
+    const cx = (e.clientX - rect.left) * (W / rect.width)
+    const cy = (e.clientY - rect.top)  * (H / rect.height)
+    // Only activate if touch is near the ball
+    if (Math.hypot(cx - BALL_X, cy - BALL_Y) < 90) {
+      dragRef.current = { active: true, sx: cx, sy: cy, cx, cy }
+    }
   }, [])
 
   const onMove = useCallback((e) => {
@@ -238,31 +222,51 @@ export default function SoccerGame({ difficulty = 'medium' }) {
     drag.active = false
 
     const st = stRef.current
-    if (!st || st.ball.flying) return
+    if (!st || st.ball.flying || st.shotsLeft <= 0) return
 
-    const dx = drag.cx - drag.sx
-    const dy = drag.cy - drag.sy
+    // dragBack = how far player pulled DOWNWARD (back from goal)
+    const dragBack = Math.max(0, drag.cy - drag.sy)
+    if (dragBack < MIN_DRAG_BACK) return  // too short, no shot
 
-    // Need upward swipe (dy < -20) to shoot
-    if (dy > -20) return
+    const dragX   = drag.cx - drag.sx
+    const power   = Math.min(dragBack / MAX_DRAG_BACK, 1)
+    const aimFrac = Math.max(-1, Math.min(1, dragX / MAX_AIM_DRAG))
 
-    const FACTOR = 0.19
-    const vx = dx * FACTOR
-    const vy = Math.max(dy * FACTOR, -22)   // cap upward velocity
+    // Calculate ball velocity toward aim target
+    const targetX  = W / 2 + aimFrac * AIM_SPREAD
+    const dx       = targetX - BALL_X
+    const dy       = GOAL_MID_Y - BALL_Y          // negative = upward
+    const dist     = Math.hypot(dx, dy)
+    const speed    = 9 + power * 17                // 9–26 px/frame
+    const frames   = dist / speed
 
-    st.ball.vx     = vx
-    st.ball.vy     = vy
+    st.ball.vx     = dx / frames
+    st.ball.vy     = dy / frames
     st.ball.flying = true
     st.ball.scored = false
-    st.shots      += 1
+    st.shotsLeft  -= 1
 
-    // GK reacts after 'gkReact' frames (moves toward ball x)
-    st.gk._reactIn   = cfg.gkReact
-    st.gk._targetX   = BALL_START_X + vx * 38  // predict where ball goes near goal
-    st.gk._diving     = false
+    // ─ GK commits to a dive ─
+    // Build pattern prediction from shot history
+    const hist       = shotHistRef.current
+    const patternAvg = hist.length > 0
+      ? hist.reduce((s, v) => s + v, 0) / hist.length
+      : 0
+    shotHistRef.current = [...hist.slice(-4), aimFrac]  // keep last 5
+
+    const randFrac   = Math.random() * 2 - 1
+    const rw         = Math.max(0, 1 - cfg.readBias - cfg.patternBias)
+    const predicted  = rw * randFrac + cfg.readBias * aimFrac + cfg.patternBias * patternAvg
+    const clampedPred = Math.max(-1, Math.min(1, predicted))
+    const commitX    = GK_MIN_X + ((clampedPred + 1) / 2) * GK_RANGE
+
+    st.gk.committed = true
+    st.gk.commitX   = Math.max(GK_MIN_X, Math.min(GK_MAX_X, commitX))
+    st.gk.leanDir   = Math.sign(clampedPred)
+    st.resetTimer   = 0
   }, [cfg])
 
-  /* main loop */
+  /* ── Main RAF loop ── */
   useEffect(() => {
     if (phase !== 'playing') return
     const canvas = canvasRef.current
@@ -277,123 +281,206 @@ export default function SoccerGame({ difficulty = 'medium' }) {
       const st   = stRef.current
       const drag = dragRef.current
 
-      /* GK oscillate (pre-kick) */
+      /* ── GK movement ── */
       if (!st.ball.flying) {
-        st.gk.phase += cfg.gkOscSpeed * 0.02 * dt
-        st.gk.cx     = W / 2 + Math.sin(st.gk.phase) * 80
-        st.gk.diving = false
+        // Gentle sway while waiting for shot
+        st.gk.osc += 0.022 * dt
+        st.gk.cx   = W / 2 + Math.sin(st.gk.osc) * 52
+        st.gk.committed = false
       } else {
-        /* GK react */
-        if (st.gk._reactIn > 0) {
-          st.gk._reactIn -= dt
-        } else {
-          // dive / move toward predicted ball
-          const targetX = Math.max(GK_MIN_X, Math.min(GK_MAX_X, st.gk._targetX))
-          const diff    = targetX - st.gk.cx
-          const move    = Math.sign(diff) * Math.min(Math.abs(diff), cfg.gkSpeed * dt)
-          st.gk.cx    += move
-          st.gk.diving = Math.abs(diff) > 40
-          st.gk.diveDir = Math.sign(diff)
-        }
+        // Dive toward committed position
+        const diff = st.gk.commitX - st.gk.cx
+        const move = Math.sign(diff) * Math.min(Math.abs(diff), cfg.gkSpd * dt)
+        st.gk.cx  += move
       }
 
-      /* Ball physics */
+      /* ── Ball physics ── */
       if (st.ball.flying) {
-        st.ball.x   += st.ball.vx * dt
-        st.ball.y   += st.ball.vy * dt
-        st.ball.spin += st.ball.vx * 0.04 * dt
+        st.ball.x    += st.ball.vx * dt
+        st.ball.y    += st.ball.vy * dt
+        st.ball.spin += st.ball.vx * 0.05 * dt
+        // Slight upward deceleration (natural arc)
+        st.ball.vy   += 0.055 * dt
 
-        // Very slight deceleration (air resistance)
-        st.ball.vx *= Math.pow(0.995, dt)
+        /* Score check — ball crosses goal zone */
+        if (!st.ball.scored && st.ball.y <= GOAL_BOT + 8 && st.ball.y >= GOAL_TOP - 35) {
+          const inPost   = st.ball.x > GOAL_LEFT + 5 && st.ball.x < GOAL_RIGHT - 5
+          const gkCovers = Math.abs(st.ball.x - st.gk.cx) < (GK_W / 2 + BALL_R * 0.4)
 
-        // Gravity-like pull upward toward goal (arcade feel)
-        // Actually: no gravity. The ball travels at constant velocity for arcade feel
-        // But add slight vy increase for natural curve
-        if (st.ball.vy < 0) st.ball.vy += 0.08 * dt
-
-        /* Score check: ball crosses crossbar */
-        if (!st.ball.scored && st.ball.y <= GOAL_BOT && st.ball.y >= GOAL_TOP - 20) {
-          const inPost = st.ball.x > GOAL_LEFT + 8 && st.ball.x < GOAL_RIGHT - 8
-          const gkCovers = Math.abs(st.ball.x - st.gk.cx) < GK_W / 2 + 4
+          let shotResult
           if (inPost && !gkCovers) {
             st.goals   += 1
-            st.score   += 100
-            st.flashMsg   = 'GOAL!'
-            st.flashFrames = 70
-            st.ball.scored = true
-          } else if (st.ball.y <= GOAL_BOT && st.ball.y >= GOAL_TOP) {
-            st.flashMsg    = gkCovers ? 'SAVED!' : 'WIDE!'
-            st.flashFrames = 50
-            st.ball.scored = true   // flag so we don't double count
+            st.flashMsg    = 'GOAL!'
+            st.flashFrames = 88
+            shotResult     = 'goal'
+          } else if (inPost && gkCovers) {
+            st.flashMsg    = 'SAVED!'
+            st.flashFrames = 66
+            shotResult     = 'saved'
+          } else {
+            st.flashMsg    = 'WIDE!'
+            st.flashFrames = 52
+            shotResult     = 'wide'
           }
-          st.resetFrames = 60
+          st.ball.scored   = true
+          st.shotResults   = [...st.shotResults, shotResult]
+          st.resetTimer    = st.shotsLeft <= 0 ? 90 : 68
         }
 
-        /* Reset after leaving screen */
-        if (st.ball.y < GOAL_TOP - 60 || st.ball.x < -40 || st.ball.x > W + 40 ||
-            (st.ball.scored && (st.resetFrames -= dt) <= 0)) {
-          if (!st.ball.scored) { st.flashMsg = 'WIDE!'; st.flashFrames = 50 }
-          st.ball = { x: BALL_START_X, y: BALL_START_Y, vx: 0, vy: 0, flying: false, spin: 0, scored: false }
+        /* Ball exit / reset */
+        const exitedScreen = st.ball.y < GOAL_TOP - 90 ||
+                             st.ball.x < -60 || st.ball.x > W + 60
+        const timerExpired = st.ball.scored && (st.resetTimer -= dt) <= 0
+
+        if (exitedScreen || timerExpired) {
+          if (!st.ball.scored) {
+            st.flashMsg    = 'WIDE!'
+            st.flashFrames = 50
+            st.shotResults = [...st.shotResults, 'wide']
+            st.shotsLeft   = Math.max(0, st.shotsLeft - 0)  // already decremented
+          }
+
+          if (st.shotsLeft <= 0) {
+            // All shots taken — game over
+            const finalScore = st.goals * 100
+            recordGame?.({ game: 'soccer', score: finalScore, mode: 'solo', won: st.goals > 0 })
+            const goalsCopy = st.goals
+            setFinals({ goals: goalsCopy, score: finalScore })
+            if (onFinish) { onFinish(finalScore); return }
+            setPhase('done')
+            return
+          }
+
+          // Reset for next shot
+          st.ball      = { x: BALL_X, y: BALL_Y, vx: 0, vy: 0, flying: false, spin: 0, scored: false }
+          st.gk.committed = false
+          st.resetTimer   = 0
         }
       }
 
       /* Flash decay */
       if (st.flashFrames > 0) st.flashFrames -= dt
 
-      /* Timer */
-      st.timeLeft -= dt / 60
-      if (st.timeLeft <= 0) {
-        recordGame?.({ game: 'soccer', score: st.score, mode: 'solo', won: st.goals > 0 })
-        setFinals({ score: st.score, goals: st.goals, shots: st.shots })
-        setPhase('done')
-        return
-      }
-
-      /* ─── Draw ─── */
+      /* ─── DRAW ─── */
       drawPitch(ctx)
       drawGoal(ctx)
-      drawGK(ctx, st.gk.cx, st.gk.diving, st.gk.diveDir)
-      drawBall(ctx, st.ball.x, st.ball.y, st.ball.spin)
+      drawGK(ctx, st.gk.cx, st.gk.committed, st.gk.leanDir)
 
-      /* Aim arrow while dragging */
-      if (drag.active && !st.ball.flying) {
-        drawArrow(ctx, BALL_START_X, BALL_START_Y, drag.cx, drag.cy)
+      /* Aim guide while dragging */
+      const dragBack = Math.max(0, drag.cy - drag.sy)
+      const isDragging = drag.active && dragBack > 5 && !st.ball.flying
+
+      if (isDragging) {
+        const power   = Math.min(dragBack / MAX_DRAG_BACK, 1)
+        const dragX   = drag.cx - drag.sx
+        const aimFrac = Math.max(-1, Math.min(1, dragX / MAX_AIM_DRAG))
+        const aimX    = W / 2 + aimFrac * AIM_SPREAD
+
+        // Trajectory arc
+        ctx.save()
+        ctx.globalAlpha = 0.40
+        ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2.5; ctx.setLineDash([5, 8])
+        ctx.beginPath()
+        ctx.moveTo(BALL_X, BALL_Y)
+        const cpX = BALL_X + (aimX - BALL_X) * 0.45
+        const cpY = BALL_Y - 150
+        ctx.quadraticCurveTo(cpX, cpY, aimX, GOAL_MID_Y + 10)
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        // Aim dot on goal mouth
+        ctx.globalAlpha = 0.65
+        ctx.beginPath(); ctx.arc(aimX, GOAL_MID_Y + 10, 7, 0, Math.PI * 2)
+        ctx.fillStyle = '#ffd700'; ctx.fill()
+        ctx.restore()
+
+        // Power bar (left side)
+        const barH = 110; const barX = 16; const barY = BALL_Y - barH / 2
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'
+        ctx.fillRect(barX, barY, 12, barH)
+        const fill   = power * barH
+        const barClr = power < 0.5 ? '#00ff88' : power < 0.82 ? '#ffd700' : '#ff3366'
+        ctx.fillStyle   = barClr
+        ctx.shadowColor = barClr; ctx.shadowBlur = 10
+        ctx.fillRect(barX, barY + barH - fill, 12, fill)
+        ctx.shadowBlur = 0
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1
+        ctx.strokeRect(barX, barY, 12, barH)
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '8px monospace'; ctx.textAlign = 'center'
+        ctx.fillText('PWR', barX + 6, barY - 6)
       }
 
-      /* GOAL / SAVED / WIDE flash */
+      drawBall(ctx, st.ball.x, st.ball.y, st.ball.spin)
+
+      /* Flash message */
       if (st.flashFrames > 0) {
-        const isGoal = st.flashMsg === 'GOAL!'
-        const a = Math.min(1, st.flashFrames / 30)
-        ctx.fillStyle = isGoal ? `rgba(0,255,136,${a * 0.15})` : `rgba(255,0,110,${a * 0.1})`
+        const isGoal  = st.flashMsg === 'GOAL!'
+        const isSaved = st.flashMsg === 'SAVED!'
+        const a = Math.min(1, st.flashFrames / 25)
+
+        ctx.fillStyle = isGoal
+          ? `rgba(0,255,136,${a * 0.12})`
+          : `rgba(255,0,110,${a * 0.10})`
         ctx.fillRect(0, 0, W, H)
 
-        ctx.font      = `bold ${isGoal ? 52 : 38}px monospace`
+        ctx.font      = `bold ${isGoal ? 60 : 40}px monospace`
         ctx.textAlign = 'center'
-        ctx.fillStyle = isGoal ? `rgba(0,255,136,${a})` : `rgba(255,100,100,${a})`
-        ctx.shadowColor = isGoal ? '#00ff88' : '#ff006e'
-        ctx.shadowBlur  = 20
+        ctx.fillStyle = isGoal ? `rgba(0,255,136,${a})`
+                     : isSaved ? `rgba(255,60,100,${a})`
+                     : `rgba(160,160,180,${a})`
+        ctx.shadowColor = isGoal ? '#00ff88' : isSaved ? '#ff006e' : '#888'
+        ctx.shadowBlur  = isGoal ? 28 : 18
         ctx.fillText(st.flashMsg, W / 2, H / 2 - 30)
         ctx.shadowBlur = 0
       }
 
-      /* HUD */
-      ctx.fillStyle = '#00ff88'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'left'
-      ctx.fillText(`${st.goals} GOALS`, 14, 26)
-      ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.font = '10px monospace'; ctx.textAlign = 'right'
-      ctx.fillText(`${st.goals}/${st.shots}`, W - 14, 26)
+      /* ── HUD ── */
+      // Goals counter
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#00ff88'
+      ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14
+      ctx.font = 'bold 36px monospace'
+      ctx.fillText(st.goals, W / 2, H - 74)
+      ctx.shadowBlur = 0
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = '9px monospace'
+      ctx.fillText('GOALS', W / 2, H - 57)
 
-      const ratio = Math.max(0, st.timeLeft / GAME_DURATION)
-      const barClr = ratio > 0.4 ? '#00ff88' : ratio > 0.2 ? '#ffd700' : '#ff006e'
-      ctx.fillStyle = 'rgba(0,255,136,0.10)'; ctx.fillRect(0, H - 4, W, 4)
-      ctx.fillStyle = barClr; ctx.fillRect(0, H - 4, W * ratio, 4)
-      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'
-      ctx.fillText(`${Math.ceil(st.timeLeft)}s`, W / 2, 26)
+      // Shot pips
+      const pipSpacing = 22
+      const totalPipW  = SHOTS_TOTAL * pipSpacing - 2
+      const pipStartX  = W / 2 - totalPipW / 2 + 8
+      for (let i = 0; i < SHOTS_TOTAL; i++) {
+        const px = pipStartX + i * pipSpacing
+        const py = H - 34
+        const res = st.shotResults[i]
+        if (res === 'goal') {
+          ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2)
+          ctx.fillStyle = '#00ff88'
+          ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 6
+          ctx.fill(); ctx.shadowBlur = 0
+        } else if (res === 'saved' || res === 'wide') {
+          ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2)
+          ctx.fillStyle = res === 'saved' ? '#ff006e' : 'rgba(255,255,255,0.18)'; ctx.fill()
+        } else if (i === SHOTS_TOTAL - st.shotsLeft) {
+          // Current shot pip
+          ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2)
+          ctx.fillStyle = '#ffd700'
+          ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8
+          ctx.fill(); ctx.shadowBlur = 0
+        } else {
+          ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2)
+          ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fill()
+        }
+      }
 
-      /* Swipe hint (first few seconds) */
-      if (st.timeLeft > GAME_DURATION - 3 && !st.ball.flying) {
-        ctx.fillStyle = 'rgba(255,255,255,0.35)'
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = '8px monospace'; ctx.textAlign = 'center'
+      ctx.fillText(`${st.shotsLeft} SHOTS LEFT`, W / 2, H - 12)
+
+      /* First-shot hint */
+      if (!st.ball.flying && st.shotsLeft === SHOTS_TOTAL && !isDragging) {
+        ctx.fillStyle = 'rgba(255,255,255,0.28)'
         ctx.font = '11px monospace'; ctx.textAlign = 'center'
-        ctx.fillText('SWIPE UP TO SHOOT', W / 2, H - 24)
+        ctx.fillText('DRAG DOWN TO AIM  ·  RELEASE TO SHOOT', W / 2, BALL_Y + 54)
       }
 
       rafRef.current = requestAnimationFrame(tick)
@@ -401,19 +488,17 @@ export default function SoccerGame({ difficulty = 'medium' }) {
 
     rafRef.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [phase, cfg, recordGame])
+  }, [phase, cfg, recordGame, onFinish])
 
   if (phase === 'done') {
-    const acc = finals.shots > 0 ? Math.round(finals.goals / finals.shots * 100) + '%' : '0%'
     return (
       <ResultScreen
         game="PENALTY SHOOTOUT"
-        score={finals.score}
+        score={finals.goals * 100}
         color="green"
         stats={[
-          { label: 'GOALS', value: finals.goals },
-          { label: 'SHOTS', value: finals.shots },
-          { label: 'RATE',  value: acc           },
+          { label: 'GOALS', value: `${finals.goals} / ${SHOTS_TOTAL}` },
+          { label: 'RATE',  value: `${Math.round(finals.goals / SHOTS_TOTAL * 100)}%` },
         ]}
         onPlayAgain={resetGame}
         onHub={() => navigate('/hub')}
@@ -422,11 +507,11 @@ export default function SoccerGame({ difficulty = 'medium' }) {
   }
 
   return (
-    <div style={{ background: '#0a1a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ background: '#071807', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <canvas
         ref={canvasRef}
         width={W} height={H}
-        style={{ display: 'block', maxWidth: '100%', touchAction: 'none' }}
+        style={{ display: 'block', maxWidth: '100%', touchAction: 'none', userSelect: 'none' }}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}

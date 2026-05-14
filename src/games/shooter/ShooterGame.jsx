@@ -106,7 +106,7 @@ const SHOOTER_DIFF = {
   hard:   { lives: 2, spawnRate:  85, speedMult: 1.4 },
 }
 
-export default function ShooterGame({ difficulty = 'medium' }) {
+export default function ShooterGame({ difficulty = 'medium', onFinish }) {
   const { updateScore } = useUser()
   const navigate        = useNavigate()
   const canvasRef       = useRef(null)
@@ -362,8 +362,9 @@ export default function ShooterGame({ difficulty = 'medium' }) {
     cancelAnimationFrame(rafRef.current)
     stateRef.current = null
     updateScore('shooter', scoreRef.current)
+    if (onFinish) { onFinish(scoreRef.current); return }
     setPhase('result')
-  }, [updateScore])
+  }, [updateScore, onFinish])
 
   // Touch: move ship by dragging
   const handleCanvasMove = useCallback((e) => {

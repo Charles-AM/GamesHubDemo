@@ -27,9 +27,9 @@ const MOLE_TYPES = {
 
 /* ─── Difficulty ──────────────────────────────────────────────────────── */
 const DIFF = {
-  easy:   { upTime: 110, riseTime: 18, spawnInterval: 70,  maxUp: 2, bombChance: 0,    speedyChance: 0.1 },
-  medium: { upTime: 75,  riseTime: 14, spawnInterval: 52,  maxUp: 3, bombChance: 0.12, speedyChance: 0.2 },
-  hard:   { upTime: 48,  riseTime: 10, spawnInterval: 36,  maxUp: 4, bombChance: 0.22, speedyChance: 0.3 },
+  easy:   { upTime: 78,  riseTime: 14, spawnInterval: 54,  maxUp: 3, bombChance: 0.08, speedyChance: 0.15 },
+  medium: { upTime: 50,  riseTime: 10, spawnInterval: 36,  maxUp: 4, bombChance: 0.18, speedyChance: 0.26 },
+  hard:   { upTime: 30,  riseTime: 6,  spawnInterval: 22,  maxUp: 5, bombChance: 0.28, speedyChance: 0.38 },
 }
 
 const GAME_DURATION = 60
@@ -127,7 +127,7 @@ function drawMole(ctx, x, holeY, progress, type, hit, hitProgress) {
 }
 
 /* ─── Component ──────────────────────────────────────────────────────── */
-export default function WhackGame({ difficulty = 'medium' }) {
+export default function WhackGame({ difficulty = 'medium', onFinish }) {
   const navigate   = useNavigate()
   const { recordGame } = useUser()
   const cfg = DIFF[difficulty] || DIFF.medium
@@ -281,7 +281,9 @@ export default function WhackGame({ difficulty = 'medium' }) {
       st.timeLeft -= dt / 60
       if (st.timeLeft <= 0 || st.gameOver) {
         recordGame?.({ game: 'whack', score: st.score, mode: 'solo', won: !st.gameOver })
-        setFinals({ score: st.score })
+        const finalScore = st.score
+        setFinals({ score: finalScore })
+        if (onFinish) { onFinish(finalScore); return }
         setPhase('done')
         return
       }

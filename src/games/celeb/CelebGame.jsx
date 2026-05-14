@@ -893,7 +893,7 @@ function buildRounds() {
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
-export default function CelebGame({ difficulty = 'medium' }) {
+export default function CelebGame({ difficulty = 'medium', onFinish }) {
   const { updateScore } = useUser()
   const cfg = DIFF[difficulty] ?? DIFF.medium
 
@@ -956,6 +956,7 @@ export default function CelebGame({ difficulty = 'medium' }) {
   const advance = useCallback((newTotal, nextIdx) => {
     if (nextIdx >= ROUNDS) {
       updateScore?.('celeb', newTotal)
+      if (onFinish) { onFinish(newTotal); return }
       setScreen('results')
     } else {
       setQIdx(nextIdx)

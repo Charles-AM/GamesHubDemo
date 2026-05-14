@@ -146,7 +146,7 @@ const RUNNER_DIFF = {
   hard:   { baseSpeed: 5.8, maxSpeed: 14, spawnMin: 38,  spawnMax:  85 },
 }
 
-export default function RunnerGame({ difficulty = 'medium' }) {
+export default function RunnerGame({ difficulty = 'medium', onFinish }) {
   const dcfg = RUNNER_DIFF[difficulty] ?? RUNNER_DIFF.medium
   const { updateScore } = useUser()
   const navigate        = useNavigate()
@@ -334,8 +334,9 @@ export default function RunnerGame({ difficulty = 'medium' }) {
     cancelAnimationFrame(rafRef.current)
     stateRef.current = null
     updateScore('runner', scoreRef.current)
+    if (onFinish) { onFinish(scoreRef.current); return }
     setPhase('result')
-  }, [updateScore])
+  }, [updateScore, onFinish])
 
   if (phase === 'result') {
     return (

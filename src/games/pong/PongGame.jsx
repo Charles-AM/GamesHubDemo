@@ -10,9 +10,9 @@ const BALL_R    = 8
 const WIN_SCORE = 7
 
 const DIFF = {
-  easy:   { paddleW: 110, aiSpeed: 2.5, ballSpeed: 4.5, aiErrorPx: 30 },
-  medium: { paddleW: 85,  aiSpeed: 4.2, ballSpeed: 6.0, aiErrorPx: 14 },
-  hard:   { paddleW: 68,  aiSpeed: 6.5, ballSpeed: 7.8, aiErrorPx: 4  },
+  easy:   { paddleW: 95,  aiSpeed: 3.8, ballSpeed: 6.0,  aiErrorPx: 22 },
+  medium: { paddleW: 76,  aiSpeed: 5.8, ballSpeed: 8.0,  aiErrorPx: 8  },
+  hard:   { paddleW: 58,  aiSpeed: 8.5, ballSpeed: 11.0, aiErrorPx: 2  },
 }
 
 const PLAYER_Y = H - 30
@@ -44,7 +44,7 @@ function initState(cfg) {
   }
 }
 
-export default function PongGame({ difficulty = 'medium' }) {
+export default function PongGame({ difficulty = 'medium', onFinish }) {
   const navigate  = useNavigate()
   const { recordGame } = useUser()
   const cfg = DIFF[difficulty] || DIFF.medium
@@ -217,9 +217,11 @@ export default function PongGame({ difficulty = 'medium' }) {
       if (st.flash > 0) st.flash -= dt
 
       if (st.gameOver) {
-        recordGame?.({ game: 'pong', score: st.playerScore * 100, mode: 'solo', won: st.won })
-        setFinalScore(st.playerScore * 100)
+        const finalPts = st.playerScore * 100
+        recordGame?.({ game: 'pong', score: finalPts, mode: 'solo', won: st.won })
+        setFinalScore(finalPts)
         setWon(st.won)
+        if (onFinish) { onFinish(finalPts); return }
         setPhase('done')
         return
       }

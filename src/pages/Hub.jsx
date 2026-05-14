@@ -5,7 +5,12 @@ import { useUser, getLevel, getLevelPct, getDailyGame, todayKey } from '../conte
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 import { GameIcon, Icon } from '../components/Icons'
 
-const GAME_NAMES = { wordwalk: 'WORD WALK', shooter: 'SPACE SHOOTER', runner: 'NEON RUNNER', fruitslash: 'FRUIT SLASH', archery: 'ARCHERY', crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAG FRENZY', snake: 'SNAKE', celeb: 'WHO AM I?' }
+const GAME_NAMES = {
+  pong: 'PONG VS AI', soccer: 'PENALTY SHOOTOUT', whack: 'WHACK-A-MOLE',
+  shooter: 'SPACE SHOOTER', runner: 'NEON RUNNER', fruitslash: 'FRUIT SLASH',
+  archery: 'ARCHERY', snake: 'SNAKE', celeb: 'WHO AM I?',
+  crossword: 'CROSSWORD', wordsearch: 'WORD SEARCH', flags: 'FLAG FRENZY',
+}
 
 function timeAgo(ts) {
   const diff = Date.now() - ts
@@ -54,8 +59,8 @@ export default function Hub() {
 
       {/* ── Header ── */}
       <div className="relative z-10 px-5 pt-6 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <span className="text-lg">🕹️</span>
+        <div className="flex items-center gap-2">
+          <Icon name="controller" size={16} color="#00f5ff" strokeWidth={1.5} />
           <span className="font-orbitron text-sm font-black tracking-wider"
             style={{ background: 'linear-gradient(90deg, #00f5ff, #bf00ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             ARCADIA DUELS
@@ -166,12 +171,12 @@ export default function Hub() {
           )}
 
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
                 background: dailyDone ? 'rgba(255,255,255,0.04)' : 'rgba(255,215,0,0.15)',
                 border: `1px solid ${dailyDone ? 'rgba(255,255,255,0.08)' : 'rgba(255,215,0,0.4)'}`,
               }}>
-              {dailyGame.icon}
+              <GameIcon id={dailyId} size={22} color={dailyDone ? '#444' : '#ffd700'} strokeWidth={1.5} />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
@@ -250,16 +255,18 @@ export default function Hub() {
                 {/* Games */}
                 <p className="font-orbitron text-[9px] text-gray-500 tracking-widest mb-3">THE GAMES</p>
                 {[
-                  { id: 'wordwalk',   name: 'WORD WALK',      desc: 'Complete the blanked-out word from 4 options to walk your character home. 10 answers wins. Difficulty scales word length and timer.' },
-                  { id: 'shooter',    name: 'SPACE SHOOTER',  desc: 'Drag to steer, auto-fire on. Destroy 3 enemy types before they breach — 60 seconds.' },
-                  { id: 'runner',     name: 'NEON RUNNER',    desc: 'Tap to jump over obstacles, hold to duck under drones. Score = distance survived.' },
-                  { id: 'fruitslash', name: 'FRUIT SLASH',    desc: 'Swipe to slash fruit and build ×3 combo streaks. Avoid bombs — each hit costs a life.' },
-                  { id: 'archery',    name: 'ARCHERY',        desc: 'Pull and aim the bowstring — release to shoot. Aim for bullseye across 10 shots.' },
-                  { id: 'snake',      name: 'SNAKE',          desc: 'Eat food, grow longer, avoid walls and your own tail. Gets faster as you grow.' },
-                  { id: 'celeb',      name: 'WHO AM I?',      desc: 'Guess the celebrity from cryptic clues. Answer fast on hint 1 for max points.' },
-                  { id: 'crossword',  name: 'CROSSWORD',      desc: 'Fill the grid using the clues before time runs out.' },
-                  { id: 'wordsearch', name: 'WORD SEARCH',    desc: 'Find all hidden words — they go in any direction.' },
-                  { id: 'flags',      name: 'FLAG FRENZY',    desc: 'Match flags to countries. 10 rounds, 4 choices, fast answers give bonus points.' },
+                  { id: 'pong',       name: 'PONG VS AI',        desc: 'Move your paddle with your finger. First to 7 points wins. Ball speeds up every rally — read the AI and place your shots.' },
+                  { id: 'soccer',     name: 'PENALTY SHOOTOUT',  desc: 'Drag back from the ball to load power, aim left/right, release to shoot. 10 shots total. The GK reads your patterns on harder difficulties.' },
+                  { id: 'whack',      name: 'WHACK-A-MOLE',      desc: 'Tap moles before they vanish. Gold moles score double. Bomb moles cost a life. Combos multiply points — 60 seconds on the clock.' },
+                  { id: 'shooter',    name: 'SPACE SHOOTER',     desc: 'Drag to steer, auto-fire on. Destroy 3 enemy types before they breach — 60 seconds.' },
+                  { id: 'runner',     name: 'NEON RUNNER',       desc: 'Tap to jump over obstacles, hold to duck under drones. Score = distance survived.' },
+                  { id: 'fruitslash', name: 'FRUIT SLASH',       desc: 'Swipe to slash fruit and build ×3 combo streaks. Avoid bombs — each hit costs a life.' },
+                  { id: 'archery',    name: 'ARCHERY',           desc: 'Pull and aim the bowstring — release to shoot. Aim for bullseye across 10 shots.' },
+                  { id: 'snake',      name: 'SNAKE',             desc: 'Eat food, grow longer, avoid walls and your own tail. Gets faster as you grow.' },
+                  { id: 'celeb',      name: 'WHO AM I?',         desc: 'Guess the celebrity from cryptic clues. Answer fast on hint 1 for max points.' },
+                  { id: 'crossword',  name: 'CROSSWORD',         desc: 'Fill the grid using the clues before time runs out.' },
+                  { id: 'wordsearch', name: 'WORD SEARCH',       desc: 'Find all hidden words — they go in any direction.' },
+                  { id: 'flags',      name: 'FLAG FRENZY',       desc: 'Match flags to countries. 10 rounds, 4 choices, fast answers give bonus points.' },
                 ].map(g => {
                   const reg = GAME_REGISTRY[g.id]
                   const c   = reg?.color || '#666'

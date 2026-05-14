@@ -29,7 +29,7 @@ const SLASH_DIFF = {
 
 function rand(min, max) { return Math.random() * (max - min) + min }
 
-export default function FruitSlashGame({ difficulty = 'medium' }) {
+export default function FruitSlashGame({ difficulty = 'medium', onFinish }) {
   const { updateScore } = useUser()
   const navigate        = useNavigate()
   const canvasRef       = useRef(null)
@@ -54,8 +54,9 @@ export default function FruitSlashGame({ difficulty = 'medium' }) {
     cancelAnimationFrame(rafRef.current)
     stateRef.current = null
     updateScore('fruitslash', scoreRef.current)
+    if (onFinish) { onFinish(scoreRef.current); return }
     setPhase('result')
-  }, [updateScore])
+  }, [updateScore, onFinish])
 
   useEffect(() => {
     const canvas = canvasRef.current

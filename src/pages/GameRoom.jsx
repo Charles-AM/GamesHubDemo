@@ -6,6 +6,8 @@ import { useUser } from '../context/UserContext'
 import { GAME_LIST, GAME_REGISTRY } from '../games/gameRegistry'
 import { GameIcon, Icon } from '../components/Icons'
 
+const SERIES_WIN = 5   // first to 5 round-wins is series champion
+
 function genCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
@@ -41,7 +43,7 @@ export default function GameRoom() {
   const [room,           setRoom]           = useState(null)
   const [isHost,         setIsHost]         = useState(false)
   const [joinCode,       setJoinCode]       = useState('')
-  const [selectedGame,   setSelectedGame]   = useState('wordwalk')
+  const [selectedGame,   setSelectedGame]   = useState(() => GAME_LIST[0]?.id || 'pong')
   const [error,          setError]          = useState('')
   const [loading,        setLoading]        = useState(false)
   const [countdown,      setCountdown]      = useState(3)
@@ -51,8 +53,11 @@ export default function GameRoom() {
   const [copied,         setCopied]         = useState(false)
   const [rounds,         setRounds]         = useState([])
   const [seriesScore,    setSeriesScore]    = useState({ me: 0, opp: 0, draws: 0 })
+  const [seriesOver,     setSeriesOver]     = useState(false)
+  const [seriesChampion, setSeriesChampion] = useState(null)   // 'me' | 'opp'
   const [showNextPicker, setShowNextPicker] = useState(false)
-  const [nextGameChoice, setNextGameChoice] = useState('wordwalk')
+  const [nextGameChoice, setNextGameChoice] = useState(() => GAME_LIST[0]?.id || 'pong')
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false)
 
   const channelRef    = useRef(null)
   const rewardRef     = useRef(false)
@@ -108,15 +113,19 @@ export default function GameRoom() {
     }
 
     if (room.status === 'playing' && screenRef.current === 'lobby') {
-      setScreen('countdown')
+      setScreen('vsscreen')
       let n = 3
-      setCountdown(n)
-      const t = setInterval(() => {
-        n--
+      let countdownInterval
+      const vsTimer = setTimeout(() => {
+        setScreen('countdown')
         setCountdown(n)
-        if (n <= 0) { clearInterval(t); setScreen('playing') }
-      }, 1000)
-      return () => clearInterval(t)
+        countdownInterval = setInterval(() => {
+          n--
+          setCountdown(n)
+          if (n <= 0) { clearInterval(countdownInterval); setScreen('playing') }
+        }, 1000)
+      }, 2200)
+      return () => { clearTimeout(vsTimer); clearInterval(countdownInterval) }
     }
 
     const bothScoresIn = room.host_score !== null && room.guest_score !== null
@@ -141,11 +150,16 @@ export default function GameRoom() {
     if (!roundSavedRef.current) {
       roundSavedRef.current = true
       setRounds(prev => [...prev, { game: room.game, myScore: mySc, oppScore: oppSc, won }])
-      setSeriesScore(prev => ({
-        me:    prev.me    + (won === true  ? 1 : 0),
-        opp:   prev.opp   + (won === false ? 1 : 0),
-        draws: prev.draws + (won === null  ? 1 : 0),
-      }))
+      setSeriesScore(prev => {
+        const newMe    = prev.me    + (won === true  ? 1 : 0)
+        const newOpp   = prev.opp   + (won === false ? 1 : 0)
+        const newDraws = prev.draws + (won === null  ? 1 : 0)
+        if (newMe >= SERIES_WIN || newOpp >= SERIES_WIN) {
+          setSeriesOver(true)
+          setSeriesChampion(newMe >= SERIES_WIN ? 'me' : 'opp')
+        }
+        return { me: newMe, opp: newOpp, draws: newDraws }
+      })
     }
 
     recordGame({
@@ -229,7 +243,8 @@ export default function GameRoom() {
     setRewardInfo(null); setScoreSent(false); rewardRef.current = false
     roundSavedRef.current = false; setCopied(false)
     setRounds([]); setSeriesScore({ me: 0, opp: 0, draws: 0 })
-    setShowNextPicker(false)
+    setSeriesOver(false); setSeriesChampion(null)
+    setShowNextPicker(false); setShowQuitConfirm(false)
     setScreen('create')
   }
 
@@ -260,8 +275,8 @@ export default function GameRoom() {
         <div className="orb orb-purple" style={{ bottom: '8%', right: '-8%' }} />
       </div>
 
-      {/* Header — hidden during gameplay */}
-      {screen !== 'playing' && (
+      {/* Header — hidden during gameplay and VS screen */}
+      {screen !== 'playing' && screen !== 'vsscreen' && screen !== 'countdown' && (
         <div className="relative z-10 px-5 pt-6 pb-4 flex items-center gap-3">
           <button onClick={goHome}
             className="font-orbitron text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
@@ -547,29 +562,95 @@ export default function GameRoom() {
           </motion.div>
         )}
 
+        {/* ── VS SCREEN ── */}
+        {screen === 'vsscreen' && room && (
+          <motion.div key="vsscreen" initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.4 }}
+            className="relative z-10 flex flex-col items-center justify-center min-h-[78vh] px-4">
+
+            {/* Game label */}
+            {(() => {
+              const g = GAME_REGISTRY[room.game]
+              return (
+                <div className="flex items-center gap-2 mb-10 px-4 py-2 rounded-xl"
+                  style={{ background: `${g.color}14`, border: `1px solid ${g.border}` }}>
+                  <GameIcon id={g.id} size={14} color={g.color} strokeWidth={1.5} />
+                  <span className="font-orbitron text-xs font-bold" style={{ color: g.color }}>{g.label}</span>
+                </div>
+              )
+            })()}
+
+            {/* Player VS layout */}
+            <div className="flex items-center gap-6 w-full max-w-xs">
+              {/* Me */}
+              <motion.div initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
+                className="flex-1 flex flex-col items-center gap-3">
+                <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl"
+                  style={{ background: 'rgba(0,245,255,0.1)', border: '2px solid rgba(0,245,255,0.45)', boxShadow: '0 0 30px rgba(0,245,255,0.15)' }}>
+                  {user.avatar}
+                </div>
+                <p className="font-orbitron text-xs font-black truncate max-w-[90px] text-center" style={{ color: '#00f5ff' }}>
+                  {user.username?.toUpperCase()}
+                </p>
+              </motion.div>
+
+              {/* VS */}
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ delay: 0.25, type: 'spring', stiffness: 220 }}
+                className="flex flex-col items-center gap-1 flex-shrink-0">
+                <p className="font-orbitron text-4xl font-black"
+                  style={{ color: '#fff', textShadow: '0 0 30px rgba(255,0,110,0.9), 0 0 60px rgba(255,0,110,0.4)' }}>
+                  VS
+                </p>
+              </motion.div>
+
+              {/* Opponent */}
+              <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
+                className="flex-1 flex flex-col items-center gap-3">
+                <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl"
+                  style={{ background: 'rgba(191,0,255,0.1)', border: '2px solid rgba(191,0,255,0.45)', boxShadow: '0 0 30px rgba(191,0,255,0.15)' }}>
+                  {isHost ? room.guest_avatar : room.host_avatar}
+                </div>
+                <p className="font-orbitron text-xs font-black truncate max-w-[90px] text-center" style={{ color: '#bf00ff' }}>
+                  {(isHost ? room.guest_username : room.host_username)?.toUpperCase()}
+                </p>
+              </motion.div>
+            </div>
+
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
+              className="font-orbitron text-[10px] text-gray-600 tracking-widest mt-10">
+              GET READY...
+            </motion.p>
+          </motion.div>
+        )}
+
         {/* ── COUNTDOWN ── */}
         {screen === 'countdown' && room && (
           <motion.div key="countdown" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="relative z-10 flex flex-col items-center justify-center min-h-[60vh] px-4">
-            <p className="font-orbitron text-[10px] text-gray-500 tracking-widest mb-8">
-              VS {isHost ? room.guest_username : room.host_username}
-            </p>
+            <div className="flex items-center gap-4 mb-8">
+              <span className="text-3xl">{user.avatar}</span>
+              <p className="font-orbitron text-[10px] text-gray-500 tracking-widest">VS</p>
+              <span className="text-3xl">{isHost ? room.guest_avatar : room.host_avatar}</span>
+            </div>
             <AnimatePresence mode="wait">
               <motion.div key={countdown}
-                initial={{ scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.4 }}
+                initial={{ scale: 2.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }} transition={{ duration: 0.38 }}
                 className="font-orbitron font-black text-center"
-                style={{ fontSize: 120, lineHeight: 1,
+                style={{ fontSize: 128, lineHeight: 1,
                   color: countdown > 0 ? '#00f5ff' : '#00ff88',
-                  textShadow: countdown > 0 ? '0 0 60px rgba(0,245,255,0.8)' : '0 0 60px rgba(0,255,136,0.8)',
+                  textShadow: countdown > 0 ? '0 0 60px rgba(0,245,255,0.9)' : '0 0 60px rgba(0,255,136,0.9)',
                 }}>
-                {countdown > 0 ? countdown : 'GO!'}
+                {countdown > 0 ? countdown : 'FIGHT!'}
               </motion.div>
             </AnimatePresence>
             {(() => {
               const g = GAME_REGISTRY[room.game]
               return (
-                <div className="flex items-center gap-2 mt-8">
+                <div className="flex items-center gap-2 mt-10">
                   <GameIcon id={g.id} size={16} color={g.color} strokeWidth={1.5} />
                   <p className="font-orbitron text-sm" style={{ color: g.color }}>{g.label}</p>
                 </div>
@@ -581,33 +662,49 @@ export default function GameRoom() {
         {/* ── PLAYING ── */}
         {screen === 'playing' && GameComp && (
           <div key="playing" className="relative z-10">
-            {/* Slim VS banner */}
-            <div className="flex items-center justify-between px-4 py-2 mb-1"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <span className="font-orbitron text-[10px] font-bold" style={{ color: '#00f5ff' }}>
-                {user.avatar} {user.username}
-              </span>
+            {/* Slim battle banner */}
+            <div className="flex items-center justify-between px-3 py-1.5"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.3)' }}>
+              <div className="flex items-center gap-1.5">
+                <span className="text-base leading-none">{user.avatar}</span>
+                <span className="font-orbitron text-[10px] font-black" style={{ color: '#00f5ff' }}>
+                  {user.username?.toUpperCase()}
+                </span>
+                {rounds.length > 0 && (
+                  <span className="font-orbitron text-[10px] font-black ml-1" style={{ color: '#00f5ff' }}>
+                    {seriesScore.me}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#ff006e', boxShadow: '0 0 6px #ff006e' }} />
                 <span className="font-orbitron text-[9px] text-gray-600 tracking-widest">LIVE</span>
               </div>
-              <span className="font-orbitron text-[10px] text-gray-400">
-                {isHost ? room.guest_username : room.host_username}{' '}
-                {isHost ? room.guest_avatar  : room.host_avatar}
-              </span>
+              <div className="flex items-center gap-1.5">
+                {rounds.length > 0 && (
+                  <span className="font-orbitron text-[10px] font-black" style={{ color: '#bf00ff' }}>
+                    {seriesScore.opp}
+                  </span>
+                )}
+                <span className="font-orbitron text-[10px] font-black" style={{ color: '#bf00ff' }}>
+                  {(isHost ? room.guest_username : room.host_username)?.toUpperCase()}
+                </span>
+                <span className="text-base leading-none">{isHost ? room.guest_avatar : room.host_avatar}</span>
+              </div>
             </div>
 
             <GameComp onFinish={handleGameFinish} />
 
             <div className="px-4 pb-3 pt-1">
-              <button onClick={forfeit}
+              <button onClick={() => setShowQuitConfirm(true)}
                 className="w-full py-1.5 rounded-lg font-orbitron text-[9px] tracking-widest transition-all"
-                style={{ color: 'rgba(255,0,110,0.25)', letterSpacing: '0.1em' }}>
+                style={{ color: 'rgba(255,0,110,0.22)', letterSpacing: '0.1em' }}>
                 forfeit
               </button>
             </div>
           </div>
         )}
+
 
         {/* ── WAITING ── */}
         {screen === 'waiting' && room && (() => {
@@ -877,9 +974,44 @@ export default function GameRoom() {
                 </motion.div>
               )}
 
+              {/* ── Series Champion Banner ── */}
+              {seriesOver && (
+                <motion.div initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, delay: 0.3 }}
+                  className="rounded-2xl p-5 mb-4 text-center"
+                  style={{
+                    background: seriesChampion === 'me' ? 'rgba(255,215,0,0.08)' : 'rgba(255,0,110,0.06)',
+                    border: `1px solid ${seriesChampion === 'me' ? 'rgba(255,215,0,0.5)' : 'rgba(255,0,110,0.35)'}`,
+                    boxShadow: seriesChampion === 'me' ? '0 0 40px rgba(255,215,0,0.12)' : 'none',
+                  }}>
+                  <Icon name="trophy" size={28} color={seriesChampion === 'me' ? '#ffd700' : '#ff006e'} strokeWidth={1.5} />
+                  <p className="font-orbitron text-xs font-black mt-2"
+                    style={{ color: seriesChampion === 'me' ? '#ffd700' : '#ff006e' }}>
+                    {seriesChampion === 'me' ? 'SERIES CHAMPION!' : `${(isHost ? room.guest_username : room.host_username)?.toUpperCase()} WINS THE SERIES`}
+                  </p>
+                  <p className="font-rajdhani text-xs text-gray-500 mt-1">
+                    First to {SERIES_WIN} wins — series complete
+                  </p>
+                </motion.div>
+              )}
+
               {/* ── Actions ── */}
               {isHost ? (
-                showNextPicker ? (
+                seriesOver ? (
+                  <div className="flex gap-3">
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={playAgain}
+                      className="flex-1 py-3.5 rounded-2xl font-orbitron text-xs font-bold tracking-wider flex items-center justify-center gap-2"
+                      style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid #00f5ff', color: '#00f5ff' }}>
+                      <Icon name="refresh" size={14} color="#00f5ff" strokeWidth={2} />
+                      NEW SERIES
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
+                      className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#555' }}>
+                      <Icon name="home" size={15} color="#555" strokeWidth={1.5} />
+                    </motion.button>
+                  </div>
+                ) : showNextPicker ? (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <p className="font-orbitron text-[9px] text-gray-600 tracking-widest text-center mb-3">
                       PICK NEXT GAME
@@ -940,7 +1072,9 @@ export default function GameRoom() {
               ) : (
                 <div className="flex gap-3">
                   <div className="flex-1 flex items-center justify-center">
-                    <p className="font-rajdhani text-xs text-gray-600">Waiting for host...</p>
+                    <p className="font-rajdhani text-xs text-gray-600">
+                      {seriesOver ? 'Series complete' : 'Waiting for host...'}
+                    </p>
                   </div>
                   <motion.button whileTap={{ scale: 0.96 }} onClick={goHome}
                     className="py-3.5 px-4 rounded-2xl font-orbitron text-xs tracking-wider flex items-center justify-center"
@@ -953,6 +1087,47 @@ export default function GameRoom() {
           )
         })()}
 
+      </AnimatePresence>
+
+      {/* ── QUIT CONFIRM MODAL (outside AnimatePresence) ── */}
+      <AnimatePresence>
+        {showQuitConfirm && (
+          <motion.div
+            key="quitModal"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            style={{ background: 'rgba(0,0,0,0.88)' }}>
+            <motion.div initial={{ scale: 0.88, y: 20 }} animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 240 }}
+              className="w-full max-w-xs rounded-2xl p-6 text-center"
+              style={{ background: '#0e0e1e', border: '1px solid rgba(255,0,110,0.45)', boxShadow: '0 0 40px rgba(255,0,110,0.15)' }}>
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{ background: 'rgba(255,0,110,0.1)', border: '1px solid rgba(255,0,110,0.35)' }}>
+                  <Icon name="x" size={28} color="#ff006e" strokeWidth={1.5} />
+                </div>
+              </div>
+              <h3 className="font-orbitron text-base font-black text-white mb-2">LEAVE BATTLE?</h3>
+              <p className="font-rajdhani text-sm text-gray-400 mb-6 leading-relaxed">
+                This will count as a loss — your opponent wins this round automatically.
+              </p>
+              <div className="flex gap-3">
+                <motion.button whileTap={{ scale: 0.95 }}
+                  onClick={() => { setShowQuitConfirm(false); forfeit() }}
+                  className="flex-1 py-3 rounded-xl font-orbitron text-xs font-black tracking-widest"
+                  style={{ background: 'rgba(255,0,110,0.12)', border: '1px solid #ff006e', color: '#ff006e' }}>
+                  LEAVE
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowQuitConfirm(false)}
+                  className="flex-1 py-3 rounded-xl font-orbitron text-xs font-black tracking-widest"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', color: '#666' }}>
+                  CANCEL
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   )
