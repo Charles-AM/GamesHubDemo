@@ -1,0 +1,42 @@
+[build]
+  command = "npm run build -w apps/web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "24.19.0"
+  NPM_VERSION = "10.9.2"
+
+[context.production]
+  command = "npm run build -w apps/web"
+
+[context.deploy-preview]
+  command = "npm run build -w apps/web"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api-unavailable"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/socket.io/*"
+  to = "/.netlify/functions/api-unavailable"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
