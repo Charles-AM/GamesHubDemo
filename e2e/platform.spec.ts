@@ -1,0 +1,26 @@
+import { test,expect } from '@playwright/test';
+test('guest can play Snake, preserve a result, and change appearance',async({page})=>{await page.goto('/');await page.getByRole('link',{name:'Play Snake'}).click();await page.getByRole('button',{name:'Play now'}).click();await expect(page.getByLabel('Snake game board.',{exact:false})).toBeVisible();await expect(page.getByRole('heading',{name:'Nice run.'})).toBeVisible({timeout:15000});await page.getByRole('link',{name:'My activity'}).click();await expect(page.getByRole('cell',{name:'snake',exact:true})).toBeVisible();await page.reload();await expect(page.getByRole('cell',{name:'snake',exact:true})).toBeVisible();});
+test('register, logout, login, play, logout',async({page})=>{
+  test.skip(Boolean(process.env.E2E_GUEST_ONLY), 'Requires the PostgreSQL and Redis integration services.');
+  const email=`test-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+  await page.goto('/login');
+  await page.getByRole('button',{name:'New here? Create an account'}).click();
+  await page.getByLabel('Player name').fill('TestPlayer');
+  await page.getByLabel('Email',{exact:true}).fill(email);
+  await page.getByLabel('Password',{exact:true}).fill('a-long-test-password-42');
+  await page.getByRole('button',{name:'Create account',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Good game, TestPlayer.'})).toBeVisible();
+  await page.getByRole('button',{name:'Sign out'}).click();
+  await page.goto('/login');
+  await page.getByLabel('Email',{exact:true}).fill(email);
+  await page.getByLabel('Password',{exact:true}).fill('a-long-test-password-42');
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Good game, TestPlayer.'})).toBeVisible();
+  await page.goto('/game/snake');
+  await page.getByRole('button',{name:'Play now'}).click();
+  await expect(page.getByRole('heading',{name:'Nice run.'})).toBeVisible({timeout:15000});
+  await page.goto('/profile');
+  await expect(page.getByRole('cell',{name:'snake',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Sign out'}).click();
+  await expect(page.getByRole('link',{name:'Sign in',exact:true})).toBeVisible();
+});

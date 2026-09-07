@@ -1,0 +1,15 @@
+import { lazy,Suspense,Component,type ReactNode } from 'react';
+import { Gamepad2,Trophy,Activity,Moon,Sun,ChevronRight,Zap,CircleUserRound } from 'lucide-react';
+import { Link,NavLink,Route,Routes } from 'react-router-dom';
+import { useLocal } from './state';
+import { useProfile,useSync } from './api';
+import Hub from './Hub';
+const Game=lazy(()=>import('./Game'));
+const Account=lazy(()=>import('./Account'));
+const Profile=lazy(()=>import('./Profile'));
+const Leaderboard=lazy(()=>import('./Leaderboard'));
+class ErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return {failed:true};}render(){return this.state.failed?<main><h1>That round hit a snag.</h1><p>Please reload to try again.</p><button onClick={()=>location.reload()}>Reload arcade</button></main>:this.props.children;}}
+export default function App(){
+ const light=useLocal(s=>s.light),setLight=useLocal(s=>s.setLight),{data:user}=useProfile(),sync=useSync();
+ return <div className={light?'app light':'app'}><a className="skip-link" href="#content">Skip to content</a><aside><Link to="/" className="brand"><Gamepad2/> arcadia<span>®</span></Link><span className="nav-label">YOUR PLAYGROUND</span><nav aria-label="Main navigation"><NavLink to="/" end className={({isActive})=>isActive?'selected':''}><Gamepad2/> Discover <ChevronRight size={16}/></NavLink><NavLink to="/leaderboard" className={({isActive})=>isActive?'selected':''}><Trophy/> Leaderboards</NavLink><NavLink to="/profile" className={({isActive})=>isActive?'selected':''}><Activity/> My activity</NavLink></nav><div className="sidebar-bottom"><div className="club"><Zap/><strong>Small games.<br/>Big energy.</strong><p>A little competition goes a long way.</p></div><button onClick={()=>setLight(!light)}>{light?<Moon/>:<Sun/>} {light?'Dark':'Light'} appearance</button></div></aside><div className="workspace"><header><span>THE EVERYDAY ARCADE <span className="status-dot"/></span><div className="row"><button className="mobile-theme" aria-label="Toggle appearance" onClick={()=>setLight(!light)}>{light?<Moon size={16}/>:<Sun size={16}/>}</button><Link className="account" to={user?'/profile':'/login'}><CircleUserRound/> {user?`${user.username} · LV ${1+Math.floor(user.xp/100)}`:'Sign in'}</Link></div></header><div id="content" tabIndex={-1}>{sync.failed&&<div className="notice">{sync.pending} practice results waiting to sync. <button onClick={sync.retry}>Retry sync</button></div>}<ErrorBoundary><Suspense fallback={<main aria-busy="true" aria-label="Loading"><div className="skeleton"/></main>}><Routes><Route path="/" element={<Hub/>}/><Route path="/hub" element={<Hub/>}/><Route path="/game/:gameId" element={<Game/>}/><Route path="/login" element={<Account/>}/><Route path="/profile" element={<Profile/>}/><Route path="/leaderboard" element={<Leaderboard/>}/><Route path="*" element={<main><h1>Out of bounds.</h1><Link className="primary" to="/">Back to the arcade</Link></main>}/></Routes></Suspense></ErrorBoundary></div></div></div>;
+}
