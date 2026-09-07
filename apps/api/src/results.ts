@@ -14,7 +14,13 @@ export async function saveResult(userId: string, result: GameResult, ranked = fa
   });
   return match;
 }
-export async function rebuildRanking() {
+let projectionQueue: Promise<void> = Promise.resolve();
+export function rebuildRanking() {
+  const next = projectionQueue.catch(() => {}).then(projectRanking);
+  projectionQueue = next;
+  return next;
+}
+async function projectRanking() {
   const best = await db.match.groupBy({ by: ['userId'], where: { game: 'pong', ranked: true }, _sum: { score: true } });
   const transaction = redis.multi().del('leaderboard:pong');
   for (const entry of best) transaction.zAdd('leaderboard:pong', { score: entry._sum.score ?? 0, value: entry.userId });

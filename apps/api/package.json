@@ -33,7 +33,7 @@
     "tsx": "4.23.13"
   },
   "devDependencies": {
-    "prisma": "8.0.0-rc.13",
+    "prisma": "7.10.0",
     "@types/express": "5.0.6",
     "@types/cookie-parser": "1.4.10",
     "@types/cors": "2.8.19",

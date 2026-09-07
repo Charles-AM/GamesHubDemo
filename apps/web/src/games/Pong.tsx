@@ -14,7 +14,7 @@ export default function Pong({online}:{online:boolean}){
   const s=io(apiBase||undefined,{withCredentials:true});socket.current=s;
   s.on('connect',()=>{setConnected(true);setStatus('Create a room or join a friend.');});
   s.on('connect_error',err=>{setConnected(false);setStatus(err.message);});
-  s.on('room:joined',(data:{code:string;side:0|1})=>{setCode(data.code);side.current=data.side;setStatus('Waiting for your opponent…');});
+  s.on('room:joined',(data:{code:string;side:0|1})=>{snapshot.current=new PongEngine().state;setScores([0,0]);setCode(data.code);side.current=data.side;setStatus('Waiting for your opponent…');});
   s.on('room:started',()=>setStatus('Match on. You control the '+(side.current===0?'left':'right')+' paddle.'));
   s.on('game:state',(state:PongState)=>{snapshot.current=state;setScores(state.scores);});
   s.on('room:error',(message:string)=>setStatus(message));
