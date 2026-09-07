@@ -111,13 +111,15 @@ npm run test:e2e
 
 E2E runs require PostgreSQL and Redis and the API environment above. CI supplies fresh service databases and runs the migration before tests. Never point E2E at production; it creates test accounts and results. Unit tests cover physics consistency, collisions, reversal buffering, power-ups, hashing and streak boundaries.
 
-## Deployment: Vercel + Railway / AWS
+## Deployment: Netlify + Railway / AWS
 
-**Frontend:** configure Vercel at the repository root, install with `npm ci`, build with `npm run build -w apps/web`, and publish `apps/web/dist`. Add an SPA rewrite for non-asset routes. Proxy `/api/*` to the API service, or use `app.example.com` and `api.example.com` under the same HTTPS site with `VITE_API_URL=https://api.example.com`. Rebuild after changing `VITE_API_URL`. Socket.IO needs direct WebSocket support; for split hosting use the API custom domain directly.
+**Frontend:** `netlify.toml` is the repository-owned source of truth. Netlify installs from the root, runs `npm run build -w apps/web`, publishes `apps/web/dist`, caches hashed assets, and rewrites browser routes to the SPA. Connect Netlify to this GitHub repository with `main` as the production branch; every push then starts a production build and pull requests receive deploy previews. Until the API is deployed, `/api/*` returns an explicit 503 while guest games remain available.
+
+After the API has a stable HTTPS domain, set `VITE_API_URL=https://api.example.com` in Netlify's production and deploy-preview environments. Trigger a rebuild after changing it. Socket.IO needs direct WebSocket support, so it connects to the API custom domain rather than a Netlify Function.
 
 **API:** deploy the Dockerfile's `api` target to a long-lived Railway/AWS container with PostgreSQL and Redis in a private network. Set `NODE_ENV=production`, a random `JWT_SECRET`, `DATABASE_URL`, `REDIS_URL`, `WEB_ORIGIN` matching the frontend exactly, and the actual number of trusted proxy hops in `TRUST_PROXY`. Run `npm run db:migrate` as a release job before shifting traffic. Configure health checks at `/health`, WebSocket upgrades and idle timeouts above 75 seconds. Keep one API replica until room sharding exists.
 
-Do not use unrelated default `vercel.app` / `railway.app` sites with Lax cookies: use same-site custom domains or a same-origin proxy. Never weaken cookie policy merely to make cross-site deployment work. Serve the frontend with the security headers in `infra/nginx.conf` (adapt CSP `connect-src` for the API domain). Configure HTTPS, secret rotation, database backups and retention policies outside the repository. Use Git-provider deployment integrations gated on `Platform CI`; no production deploy occurs automatically from these templates.
+Do not use unrelated default `netlify.app` / `railway.app` sites with Lax cookies: use same-site custom domains such as `app.example.com` and `api.example.com`. Never weaken cookie policy merely to make cross-site deployment work. Adapt the `connect-src` policy for the API domain when adding a Content Security Policy. Configure HTTPS, secret rotation, database backups and retention policies outside the repository. Netlify's Git integration owns frontend continuous deployment; Railway or AWS should deploy the API only after `Platform CI` passes.
 
 ## Original app
 

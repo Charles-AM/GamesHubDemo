@@ -13,7 +13,8 @@ import { requireAuth, createSession, profileSelect, cookieOptions, authenticate,
 import { hashPassword, verifyPassword } from './security.js';
 import { saveResult } from './results.js';
 
-export const app = express();
+export async function createApp() {
+const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', config.TRUST_PROXY);
 app.use(helmet(), cors({ origin: config.WEB_ORIGIN, credentials: true }), express.json({ limit: '16kb' }), cookieParser());
@@ -101,3 +102,5 @@ app.use((error: unknown,_req: express.Request,res: express.Response,_next: expre
   logger.error({ error: error instanceof Error ? error.message : 'Unknown error' }, 'Request failed');
   res.status(500).json({ error:'Something went wrong. Please try again.' });
 });
+return app;
+}
