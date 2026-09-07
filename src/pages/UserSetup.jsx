@@ -4,18 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useUser, AVATARS } from '../context/UserContext'
 import { GameIcon, Icon } from '../components/Icons'
 
-// Geometric particle positions (static, no emoji)
-const PARTICLES = [
-  { shape: 'diamond', top: '8%',  left: '6%',  color: '#00f5ff', size: 8,  delay: 0    },
-  { shape: 'ring',    top: '15%', left: '82%', color: '#bf00ff', size: 10, delay: 0.6  },
-  { shape: 'diamond', top: '35%', left: '90%', color: '#ff006e', size: 6,  delay: 1.1  },
-  { shape: 'ring',    top: '55%', left: '4%',  color: '#ffd700', size: 8,  delay: 0.3  },
-  { shape: 'diamond', top: '72%', left: '88%', color: '#00ff88', size: 7,  delay: 0.8  },
-  { shape: 'ring',    top: '85%', left: '12%', color: '#00f5ff', size: 9,  delay: 1.4  },
-  { shape: 'diamond', top: '22%', left: '48%', color: '#bf00ff', size: 5,  delay: 0.5  },
-  { shape: 'ring',    top: '65%', left: '55%', color: '#ff006e', size: 6,  delay: 1.0  },
-]
-
 // Rate limiting helpers — outside component so they don't recreate on every render
 const LIMIT_KEY        = 'arcadia_signin_attempts'
 const getLimitData     = () => JSON.parse(sessionStorage.getItem(LIMIT_KEY) || '{"count":0,"lockedUntil":0}')
@@ -148,31 +136,6 @@ export default function UserSetup() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 relative overflow-hidden">
 
-      {/* Orbs */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="orb orb-cyan"   style={{ top: '5%',    left: '-5%'  }} />
-        <div className="orb orb-purple" style={{ bottom: '5%', right: '-5%' }} />
-        <div className="orb orb-pink"   style={{ top: '50%',   left: '40%'  }} />
-      </div>
-
-      {/* Floating geometric particles */}
-      {PARTICLES.map((p, i) => (
-        <motion.div key={i} className="fixed pointer-events-none"
-          style={{ top: p.top, left: p.left, opacity: 0.18 }}
-          animate={{ y: [0, -12, 0], rotate: p.shape === 'diamond' ? [0, 180, 360] : [0, 0, 0], scale: [1, 1.15, 1] }}
-          transition={{ duration: 3.5 + i * 0.35, repeat: Infinity, ease: 'easeInOut', delay: p.delay }}>
-          {p.shape === 'diamond' ? (
-            <svg width={p.size * 2} height={p.size * 2} viewBox="0 0 12 12">
-              <polygon points="6,0 12,6 6,12 0,6" fill={p.color} />
-            </svg>
-          ) : (
-            <svg width={p.size * 2} height={p.size * 2} viewBox="0 0 12 12">
-              <circle cx="6" cy="6" r="4.5" fill="none" stroke={p.color} strokeWidth="1.5" />
-            </svg>
-          )}
-        </motion.div>
-      ))}
-
       {/* Logo */}
       <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }}
         className="text-center mb-5 relative z-10">
@@ -187,8 +150,18 @@ export default function UserSetup() {
           </h1>
         </div>
         <h2 className="font-orbitron text-xl font-bold neon-text-purple tracking-[0.5em]">DUELS</h2>
-        <p className="font-rajdhani text-gray-500 mt-1 text-xs tracking-widest">10 ARCADE GAMES · BATTLE MODE · DAILY CHALLENGES</p>
+        <p className="font-rajdhani text-gray-500 mt-1 text-xs tracking-widest">12 ARCADE GAMES · BATTLE MODE · DAILY CHALLENGES</p>
       </motion.div>
+
+      {(screen === 'signup' || screen === 'signin') && (
+        <div className="relative z-10 w-full max-w-sm mb-5">
+          <motion.button whileTap={{ scale: 0.98 }} onClick={() => navigate('/hub')}
+            className="guest-entry w-full py-3.5 font-orbitron text-sm tracking-widest font-bold">
+            START PLAYING →
+          </motion.button>
+          <p className="font-rajdhani text-xs text-gray-500 text-center mt-2">No account needed. Your first game starts immediately.</p>
+        </div>
+      )}
 
       {/* Game showcase */}
       {(screen === 'signup' || screen === 'signin') && (
@@ -224,7 +197,7 @@ export default function UserSetup() {
           {/* Feature pills */}
           <div className="flex flex-wrap gap-2 justify-center">
             {[
-              { icon: 'controller', text: '10 GAMES',        color: '#ffd700' },
+              { icon: 'controller', text: '12 GAMES',        color: '#ffd700' },
               { icon: 'check',      text: '3 DIFFICULTIES',  color: '#00ff88' },
               { icon: 'swords',     text: 'REAL-TIME BATTLE',color: '#ff006e' },
               { icon: 'refresh',    text: 'DAILY CHALLENGE', color: '#bf00ff' },
@@ -288,20 +261,6 @@ export default function UserSetup() {
               </button>
             </div>
 
-            <div className="flex items-center gap-3 my-2">
-              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <span className="font-rajdhani text-[10px] text-gray-600">OR</span>
-              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            </div>
-
-            <button onClick={() => navigate('/hub')}
-              className="w-full py-2.5 rounded-xl font-orbitron text-xs tracking-widest transition-all"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.10)', color: '#9ca3af' }}>
-              PLAY AS GUEST →
-            </button>
-            <p className="font-rajdhani text-[10px] text-gray-700 text-center mt-1.5">
-              Scores won't be saved · Battle mode requires an account
-            </p>
           </motion.div>
         )}
 
@@ -344,20 +303,6 @@ export default function UserSetup() {
               ← BACK TO SIGN IN
             </button>
 
-            <div className="flex items-center gap-3 my-2">
-              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <span className="font-rajdhani text-[10px] text-gray-600">OR</span>
-              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            </div>
-
-            <button onClick={() => navigate('/hub')}
-              className="w-full py-2.5 rounded-xl font-orbitron text-xs tracking-widest transition-all"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.10)', color: '#9ca3af' }}>
-              PLAY AS GUEST →
-            </button>
-            <p className="font-rajdhani text-[10px] text-gray-700 text-center mt-1.5">
-              Scores won't be saved · Battle mode requires an account
-            </p>
           </motion.div>
         )}
 

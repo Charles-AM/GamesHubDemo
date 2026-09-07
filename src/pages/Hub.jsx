@@ -25,7 +25,6 @@ function timeAgo(ts) {
 export default function Hub() {
   const { user, scores, matchHistory, signOut: logout } = useUser()
   const navigate = useNavigate()
-  const [expandGame,  setExpandGame]  = useState(null)
   const [showHowTo,   setShowHowTo]   = useState(false)
 
   const xp    = user?.xp || 0
@@ -49,13 +48,6 @@ export default function Hub() {
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden">
-
-      {/* Background orbs */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="orb orb-cyan"   style={{ top: '-5%',  left: '-10%' }} />
-        <div className="orb orb-purple" style={{ bottom: '8%', right: '-8%' }} />
-        <div className="orb orb-pink"   style={{ top: '45%',  left: '35%'  }} />
-      </div>
 
       {/* ── Header ── */}
       <div className="relative z-10 px-5 pt-6 pb-3 flex items-center justify-between">
@@ -220,7 +212,7 @@ export default function Hub() {
       {/* ── Game Grid (2-col for first 4, full for 5th) ── */}
       <div className="relative z-10 px-4">
         {/* 2-col grid for all games */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="game-library-grid grid grid-cols-2 sm:grid-cols-3 gap-3">
           {GAME_LIST.map((g, i) => (
             <GameCard key={g.id} game={g} scores={scores[g.id]} navigate={navigate} delay={i * 0.05} />
           ))}
@@ -345,74 +337,27 @@ export default function Hub() {
 
 function GameCard({ game, scores: s, navigate, delay }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.35, type: 'spring', stiffness: 130 }}>
-      <div className="rounded-2xl p-3 flex flex-col h-full"
-        style={{ background: game.gradient, border: `1px solid ${game.border}`, boxShadow: `0 4px 24px ${game.glow}` }}>
+    <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.25 }} onClick={() => navigate(`/game/${game.id}/solo`)}
+      className="game-card-clean text-left p-3 flex flex-col h-full w-full"
+      style={{ '--game-color': game.color }}>
 
-        {/* Icon + best score */}
         <div className="flex items-start justify-between mb-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: `${game.color}20`, border: `1px solid ${game.color}44` }}>
+          <div className="game-card-icon w-9 h-9 flex items-center justify-center flex-shrink-0">
             <GameIcon id={game.id} size={18} color={game.color} strokeWidth={1.5} />
           </div>
-          {s && (
-            <div className="text-right">
-              <p className="font-orbitron text-sm font-black leading-tight" style={{ color: game.color }}>{s.best}</p>
-              <p className="font-rajdhani text-[9px] text-gray-600">{s.plays}× played</p>
-            </div>
-          )}
+          <span className="font-orbitron text-[8px] tracking-widest" style={{ color: game.color }}>{game.tag}</span>
         </div>
 
-        <p className="font-orbitron text-[10px] font-black mb-2 leading-tight flex-1" style={{ color: game.color }}>
+        <p className="font-orbitron text-[11px] font-black mb-1 leading-tight" style={{ color: game.color }}>
           {GAME_NAMES[game.id] || game.label}
         </p>
-
-        <button onClick={() => navigate(`/game/${game.id}/solo`)}
-          className="w-full py-1.5 rounded-lg font-orbitron text-[9px] font-bold tracking-wider transition-all"
-          style={{ background: `${game.color}18`, border: `1px solid ${game.color}66`, color: game.color }}>
-          ▶ PLAY
-        </button>
-      </div>
-    </motion.div>
-  )
-}
-
-function GameCardWide({ game, scores: s, navigate, delay }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.35, type: 'spring', stiffness: 130 }}>
-      <div className="rounded-2xl p-4 relative overflow-hidden"
-        style={{ background: game.gradient, border: `1px solid ${game.border}`, boxShadow: `0 4px 30px ${game.glow}` }}>
-
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: `${game.color}20`, border: `1px solid ${game.color}44` }}>
-            <GameIcon id={game.id} size={24} color={game.color} strokeWidth={1.5} />
-          </div>
-          <div className="flex-1">
-            <span className="font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: `${game.color}18`, color: game.color }}>
-              {game.tag}
-            </span>
-            <p className="font-orbitron text-sm font-black mt-0.5" style={{ color: game.color }}>{game.label}</p>
-            <p className="font-rajdhani text-xs text-gray-400">{game.desc}</p>
-          </div>
-          {s && (
-            <div className="text-right flex-shrink-0">
-              <p className="font-orbitron text-xl font-black" style={{ color: game.color }}>{s.best}</p>
-              <p className="font-rajdhani text-[10px] text-gray-500">{s.plays} plays</p>
-            </div>
-          )}
+        <p className="game-card-desc font-rajdhani text-xs text-gray-500 flex-1">{game.desc}</p>
+        <div className="game-card-meta mt-3 pt-2 flex items-end justify-between">
+          <span className="font-orbitron text-[8px] text-gray-500">{s ? `BEST ${s.best}` : 'NEW RUN'}</span>
+          <span className="font-orbitron text-[9px] font-bold" style={{ color: game.color }}>PLAY →</span>
         </div>
-
-        <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate(`/game/${game.id}/solo`)}
-          className="w-full py-2.5 rounded-xl font-orbitron text-xs font-bold tracking-wider"
-          style={{ background: `${game.color}18`, border: `1px solid ${game.color}`, color: game.color }}>
-          ▶ PLAY SOLO
-        </motion.button>
-      </div>
-    </motion.div>
+    </motion.button>
   )
 }
 

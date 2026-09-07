@@ -12,14 +12,12 @@ export default function BottomNav() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="fixed bottom-0 z-50"
-      style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 540 }}>
+    <nav className="bottom-nav fixed bottom-0 z-50"
+      style={{ left: '50%', transform: 'translateX(-50%)', width: '100%' }}>
       <div className="flex items-stretch"
         style={{
           background: 'rgba(8,8,24,0.95)',
           borderTop: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}>
         {TABS.map(tab => {
@@ -33,15 +31,14 @@ export default function BottomNav() {
                 name={tab.icon} size={20} color={color}
                 strokeWidth={active ? 2 : 1.5}
                 className="transition-all"
-                style={{ filter: active ? 'drop-shadow(0 0 5px rgba(0,245,255,0.7))' : 'none' }}
+                style={{ filter: 'none' }}
               />
               <span className="font-orbitron text-[9px] tracking-widest transition-all"
                 style={{ color: active ? '#00f5ff' : '#3a3a4a' }}>
                 {tab.label}
               </span>
               {active && (
-                <div className="absolute bottom-0 h-0.5 w-8 rounded-full"
-                  style={{ background: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }} />
+                <div className="absolute bottom-0 h-0.5 w-8" style={{ background: '#00f5ff' }} />
               )}
             </button>
           )
