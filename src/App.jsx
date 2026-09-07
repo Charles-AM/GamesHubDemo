@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { UserProvider, useUser } from './context/UserContext'
 import UserSetup    from './pages/UserSetup'
@@ -75,9 +76,9 @@ export default function App() {
     <UserProvider>
       <BrowserRouter>
         <div className="scanlines grid-bg min-h-screen">
-          <div className="relative mx-auto min-h-screen" style={{ maxWidth: 540 }}>
+          <div className="app-shell relative mx-auto min-h-screen">
             <LevelUpToast />
-            <Layout />
+            <Suspense fallback={<LoadingScreen />}><Layout /></Suspense>
           </div>
         </div>
       </BrowserRouter>

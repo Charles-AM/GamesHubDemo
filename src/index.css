@@ -46,6 +46,12 @@ body {
   user-select: none;
 }
 
+.app-shell,
+.bottom-nav {
+  width: 100%;
+  max-width: 720px;
+}
+
 /* All interactive elements — minimum 44px touch target */
 button, [role="button"] {
   min-height: 44px;
@@ -60,17 +66,15 @@ button, [role="button"] {
 ::-webkit-scrollbar-thumb { background: #00f5ff; border-radius: 2px; }
 
 /* ─── Neon text ─────────────────────────────────── */
-.neon-text-cyan   { color: #00f5ff; text-shadow: 0 0 10px #00f5ff, 0 0 30px #00f5ff; }
-.neon-text-purple { color: #bf00ff; text-shadow: 0 0 10px #bf00ff, 0 0 30px #bf00ff; }
-.neon-text-pink   { color: #ff006e; text-shadow: 0 0 10px #ff006e, 0 0 30px #ff006e; }
-.neon-text-green  { color: #00ff88; text-shadow: 0 0 10px #00ff88, 0 0 30px #00ff88; }
-.neon-text-gold   { color: #ffd700; text-shadow: 0 0 10px #ffd700, 0 0 30px #ffd700; }
+.neon-text-cyan   { color: #00f5ff; text-shadow: 0 0 12px #00f5ff66; }
+.neon-text-purple { color: #bf00ff; text-shadow: 0 0 12px #bf00ff66; }
+.neon-text-pink   { color: #ff006e; text-shadow: 0 0 12px #ff006e66; }
+.neon-text-green  { color: #00ff88; text-shadow: 0 0 12px #00ff8866; }
+.neon-text-gold   { color: #ffd700; text-shadow: 0 0 12px #ffd70066; }
 
 /* ─── Glass card ────────────────────────────────── */
 .glass-card {
-  background: rgba(13, 13, 43, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #0d0d25;
 }
 
 /* ─── Neon borders ──────────────────────────────── */
@@ -93,16 +97,7 @@ button, [role="button"] {
   0%   { top: -2px; }
   100% { top: 100vh; }
 }
-.scanlines::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 2px;
-  background: rgba(0,245,255,0.08);
-  animation: scanline 6s linear infinite;
-  pointer-events: none;
-  z-index: 9999;
-}
+.scanlines::before { display: none; }
 
 /* ─── Background orbs ───────────────────────────── */
 @keyframes orbFloat {
@@ -111,12 +106,7 @@ button, [role="button"] {
   66%       { transform: translate(-20px, 20px) scale(0.95); }
 }
 .orb {
-  position: absolute;
-  width: 280px; height: 280px;
-  border-radius: 50%;
-  filter: blur(80px);
-  animation: orbFloat 12s ease-in-out infinite;
-  pointer-events: none;
+  display: none;
 }
 .orb-cyan   { background: radial-gradient(circle, rgba(0,245,255,0.35), transparent 70%); animation-delay: 0s; }
 .orb-purple { background: radial-gradient(circle, rgba(191,0,255,0.3),  transparent 70%); animation-delay: -4s; }
@@ -162,9 +152,9 @@ button, [role="button"] {
 
 /* ─── CSS custom properties (dark) ─────────────── */
 :root {
-  --surf-1:       rgba(255,255,255,0.03);
-  --surf-2:       rgba(255,255,255,0.06);
-  --surf-3:       rgba(255,255,255,0.10);
+  --surf-1:       #0d0d25;
+  --surf-2:       #12122e;
+  --surf-3:       #19193a;
   --bdr-1:        rgba(255,255,255,0.06);
   --bdr-2:        rgba(255,255,255,0.10);
   --bdr-3:        rgba(255,255,255,0.18);
@@ -175,4 +165,60 @@ button, [role="button"] {
   --nav-border:   rgba(255,255,255,0.08);
   --input-bg:     rgba(255,255,255,0.06);
   --input-border: rgba(255,255,255,0.12);
+}
+
+.guest-entry {
+  color: #080818;
+  background: #00f5ff;
+  border: 1px solid #00f5ff;
+  border-radius: 10px;
+}
+
+.game-card-clean {
+  appearance: none;
+  min-height: 190px;
+  color: white;
+  background: #0d0d25;
+  border: 1px solid var(--bdr-2);
+  border-top: 3px solid var(--game-color);
+  border-radius: 12px;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.game-card-clean:hover {
+  background: #12122e;
+  transform: translateY(-2px);
+}
+
+.game-card-icon {
+  background: #080818;
+  border: 1px solid var(--game-color);
+  border-radius: 8px;
+}
+
+.game-card-desc {
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.game-card-meta {
+  border-top: 1px solid var(--bdr-1);
+}
+
+.result-score-panel,
+.result-stats-panel {
+  background: #0d0d25;
+  border: 1px solid var(--bdr-2);
+  border-radius: 12px;
+}
+
+.result-score-panel { border-top-width: 3px; }
+
+@media (max-width: 639px) {
+  .app-shell,
+  .bottom-nav { max-width: 540px; }
+  .game-card-clean { min-height: 174px; }
 }

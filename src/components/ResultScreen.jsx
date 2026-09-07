@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Icon } from './Icons'
 
@@ -22,10 +23,14 @@ export default function ResultScreen({
 }) {
   const c = C[color] || C.cyan
   const o = outcome ? OUTCOMES[outcome] : null
+  const [copied, setCopied] = useState(false)
 
   const handleShare = () => {
     const txt = shareText || `I scored ${score} in ${game} on ArcadiaDuels! Can you beat it?`
-    navigator.clipboard?.writeText(txt).catch(() => {})
+    navigator.clipboard?.writeText(txt).then(() => {
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    }).catch(() => {})
   }
 
   return (
@@ -46,7 +51,7 @@ export default function ResultScreen({
         )}
 
         {/* Score */}
-        <div className="glass-card rounded-2xl p-6 text-center mb-4" style={{ border: c.border }}>
+        <div className="result-score-panel p-6 text-center mb-3" style={{ borderColor: c.color }}>
           <p className="font-rajdhani text-gray-500 text-xs tracking-widest mb-1">FINAL SCORE</p>
           <motion.p initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.25, type: 'spring' }}
@@ -57,7 +62,7 @@ export default function ResultScreen({
 
         {/* Stats */}
         {stats.length > 0 && (
-          <div className="glass-card rounded-2xl p-4 mb-4 flex justify-around border border-gray-800">
+          <div className="result-stats-panel p-4 mb-3 flex justify-around">
             {stats.map((s, i) => (
               <div key={i} className="text-center">
                 <p className="font-orbitron text-[10px] text-gray-600 tracking-wider">{s.label}</p>
@@ -70,22 +75,27 @@ export default function ResultScreen({
         {/* Share */}
         <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
           whileTap={{ scale: 0.95 }} onClick={handleShare}
-          className="w-full py-2 rounded-xl font-orbitron text-[10px] tracking-widest mb-4 transition-all
+          className="w-full py-2 font-orbitron text-[10px] tracking-widest mb-4 transition-all
                      flex items-center justify-center gap-2"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#555' }}>
-          <Icon name="share" size={12} color="#555" />
-          COPY SCORE TO SHARE
+          style={{ border: '1px solid var(--bdr-2)', color: copied ? '#00ff88' : '#777' }}>
+          <Icon name={copied ? 'check' : 'share'} size={12} color={copied ? '#00ff88' : '#777'} />
+          {copied ? 'SCORE COPIED' : 'COPY SCORE TO SHARE'}
         </motion.button>
 
         {/* Buttons */}
         <div className="flex flex-col gap-3">
           <motion.button whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }} onClick={onPlayAgain}
-            className="w-full py-3 rounded-xl font-orbitron text-sm tracking-widest transition-all"
-            style={{ background: `${c.color}12`, border: c.border, color: c.color }}>
-            PLAY AGAIN
+            className="w-full py-3 font-orbitron text-sm tracking-widest transition-all"
+            style={{ background: c.color, border: `1px solid ${c.color}`, color: '#080818' }}>
+            RETRY
           </motion.button>
+          <button onClick={() => window.location.reload()}
+            className="w-full py-3 font-orbitron text-xs tracking-widest"
+            style={{ border: c.border, color: c.color }}>
+            CHANGE DIFFICULTY
+          </button>
           <button onClick={onHub}
-            className="w-full py-3 rounded-xl font-orbitron text-xs tracking-widest
+            className="w-full py-3 font-orbitron text-xs tracking-widest
                        border border-gray-800 text-gray-600 hover:text-gray-400 transition-all">
             BACK TO HUB
           </button>

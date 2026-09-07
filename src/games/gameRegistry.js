@@ -1,15 +1,17 @@
-import PongGame       from './pong/PongGame'
-import WhackGame      from './whack/WhackGame'
-import SoccerGame     from './soccer/SoccerGame'
-import ArcheryGame    from './archery/ArcheryGame'
-import WordSearchGame from './wordsearch/WordSearchGame'
-import CrosswordGame  from './crossword/CrosswordGame'
-import FlagGame       from './flags/FlagGame'
-import SnakeGame      from './snake/SnakeGame'
-import CelebGame      from './celeb/CelebGame'
-import ShooterGame    from './shooter/ShooterGame'
-import RunnerGame     from './runner/RunnerGame'
-import FruitSlashGame from './fruitslash/FruitSlashGame'
+import { lazy } from 'react'
+
+const PongGame       = lazy(() => import('./pong/PongGame'))
+const WhackGame      = lazy(() => import('./whack/WhackGame'))
+const SoccerGame     = lazy(() => import('./soccer/SoccerGame'))
+const ArcheryGame    = lazy(() => import('./archery/ArcheryGame'))
+const WordSearchGame = lazy(() => import('./wordsearch/WordSearchGame'))
+const CrosswordGame  = lazy(() => import('./crossword/CrosswordGame'))
+const FlagGame       = lazy(() => import('./flags/FlagGame'))
+const SnakeGame      = lazy(() => import('./snake/SnakeGame'))
+const CelebGame      = lazy(() => import('./celeb/CelebGame'))
+const ShooterGame    = lazy(() => import('./shooter/ShooterGame'))
+const RunnerGame     = lazy(() => import('./runner/RunnerGame'))
+const FruitSlashGame = lazy(() => import('./fruitslash/FruitSlashGame'))
 
 export const GAME_REGISTRY = {
   pong: {
